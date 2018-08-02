@@ -36,7 +36,7 @@
     </developers>
 
     <properties>
-        <java.version>1.6</java.version>
+        <java.version>1.8</java.version>
         <encoding>UTF-8</encoding>
     </properties>
 
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -106,13 +106,13 @@
         </dependency>
         <!-- cf. http://notaboekje.blogspot.fr/2012/02/creer-un-projet-maven-pour-javafx.html  -->
         <!-- Add 'javafx.rt.jar' property in maven settings.xml, representing the path of the JavaFX jar -->
-        <dependency>
+        <!--dependency>
             <groupId>com.oracle</groupId>
             <artifactId>javafx</artifactId>
             <version>2.2</version>
             <systemPath>${javafx.rt.jar}</systemPath>
             <scope>system</scope>
-        </dependency>
+        </dependency-->
     </dependencies>
 
     <build>
@@ -173,7 +173,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <version>3.6.2</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -183,7 +183,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>2.5</version>
+                <version>3.1.0</version>
                 <configuration>
                     <encoding>${encoding}</encoding>
                 </configuration>
@@ -193,7 +193,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.2.1</version>
+                <version>3.0.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -207,47 +207,47 @@
                 </executions>
             </plugin>
             <!-- Package JavaDocs to JAR to upload to repo -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9</version>
-                <configuration>
-                    <encoding>${encoding}</encoding>
-                    <reportOutputDirectory>${basedir}</reportOutputDirectory>
-                    <destDir>apidocs</destDir>
-                    <!--<additionalparam>-Xdoclint:none</additionalparam>-->
-                </configuration>
-                <executions>
-                   <execution>
-                      <id>attach-javadocs</id>
-                      <!-- Restrict execution of source compilation to install -->
-                      <phase>install</phase>
-                      <goals>
-                         <goal>jar</goal>
-                      </goals>
-                   </execution>
-                </executions>
-            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-javadoc-plugin</artifactId>-->
+                <!--<version>3.0.1</version>-->
+                <!--<configuration>-->
+                    <!--<encoding>${encoding}</encoding>-->
+                    <!--<reportOutputDirectory>${basedir}</reportOutputDirectory>-->
+                    <!--<destDir>apidocs</destDir>-->
+                    <!--&lt;!&ndash;<additionalparam>-Xdoclint:none</additionalparam>&ndash;&gt;-->
+                <!--</configuration>-->
+                <!--<executions>-->
+                   <!--<execution>-->
+                      <!--<id>attach-javadocs</id>-->
+                      <!--&lt;!&ndash; Restrict execution of source compilation to install &ndash;&gt;-->
+                      <!--<phase>install</phase>-->
+                      <!--<goals>-->
+                         <!--<goal>jar</goal>-->
+                      <!--</goals>-->
+                   <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
             
-            <plugin>
-				<groupId>com.github.github</groupId>
-				<artifactId>downloads-maven-plugin</artifactId>
-				<version>0.6</version>
-				<configuration>
-					<description>Official ${project.name} build of the ${project.version} release</description>
-					<override>true</override>
-					<includeAttached>true</includeAttached>
-					<server>github</server>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>upload</goal>
-						</goals>
-						<phase>install</phase>
-					</execution>
-				</executions>
-			</plugin>
+            <!--<plugin>-->
+				<!--<groupId>com.github.github</groupId>-->
+				<!--<artifactId>downloads-maven-plugin</artifactId>-->
+				<!--<version>0.6</version>-->
+				<!--<configuration>-->
+					<!--<description>Official ${project.name} build of the ${project.version} release</description>-->
+					<!--<override>true</override>-->
+					<!--<includeAttached>true</includeAttached>-->
+					<!--<server>github</server>-->
+				<!--</configuration>-->
+				<!--<executions>-->
+					<!--<execution>-->
+						<!--<goals>-->
+							<!--<goal>upload</goal>-->
+						<!--</goals>-->
+						<!--<phase>install</phase>-->
+					<!--</execution>-->
+				<!--</executions>-->
+			<!--</plugin>-->
 			<plugin>
 				<groupId>com.github.github</groupId>
 				<artifactId>site-maven-plugin</artifactId>
