@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeoutException;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -47,6 +48,7 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 
@@ -2395,5 +2397,29 @@ public class TestMapping extends TestAbstract {
     public void testBigDecimalSerialization() {
         Jcrom jcrom = new Jcrom(false, true);
         jcrom.map(EntityWithBigDecimalSerialization.class);
+    }
+
+    /**
+     * Issue #127
+     * Update node with a map property fail with NoSuchElementException
+     * https://github.com/Kobee1203/jcrom/issues/127
+     *
+     * @throws InterruptedException
+     * @throws TimeoutException
+     * @throws RepositoryException
+     */
+    @Test
+    public void issue127() throws InterruptedException, TimeoutException, RepositoryException {
+        final Jcrom jcrom = new Jcrom();
+        jcrom.map(EntityParent.class);
+
+        EntityParent parent = new EntityParent();
+        parent.setName("company");
+        parent.setMyMap(new HashMap<>());
+        Node entityNode = jcrom.addNode(session.getRootNode(), parent);
+
+        parent = jcrom.fromNode(EntityParent.class, entityNode);
+        parent.getMyMap().put("value", "test");
+        entityNode = jcrom.updateNode(entityNode, parent);
     }
 }
