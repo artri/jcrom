@@ -268,9 +268,8 @@ class PropertyMapper {
 
         boolean nullOrEmpty = map == null || map.isEmpty();
         // remove the child node
-        NodeIterator nodeIterator = node.getNodes(nodeName);
-        while (nodeIterator.hasNext()) {
-            nodeIterator.nextNode().remove();
+        if (node.hasNode(nodeName)) {
+            node.getNode(nodeName).remove();
         }
         // add the map as a child node
         Node childContainer = node.addNode(mapper.getCleanName(nodeName));
