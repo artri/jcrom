@@ -51,7 +51,7 @@
   - * (undefined)
   + thumbnail.png (nt:file)
   + workflows (nt:base)
-  + * (nt:base) = nt:base multiple version
+  + * (nt:base) = nt:base sns version
   + jcr:content (nt:base)
   + icon.png (nt:file)
 
@@ -161,7 +161,7 @@
   - afterdelete (string)
   - * (undefined) multiple
   - aftercreate (string)
-  + * (nt:base) = nt:base multiple version
+  + * (nt:base) = nt:base sns version
 
 [cq:Console] > mix:title, sling:VanityPath
   mixin
@@ -183,7 +183,7 @@
   + dialog (nt:base) = nt:unstructured
   + design_dialog (nt:base) = nt:unstructured
   + cq:htmlTag (nt:base) = nt:unstructured
-  + * (nt:base) = nt:base multiple version
+  + * (nt:base) = nt:base sns version
   + cq:infoProviders (nt:base) = nt:unstructured
   + cq:editConfig (cq:EditConfig) = cq:EditConfig
   + icon.png (nt:file)

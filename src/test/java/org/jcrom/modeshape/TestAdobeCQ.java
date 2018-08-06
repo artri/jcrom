@@ -61,8 +61,11 @@ public class TestAdobeCQ extends ModeShapeSingleUseTest {
             context.getNamespaceRegistry().register("cq", "http://www.day.com/jcr/cq/1.0");
 
             // Set up the importer ...
-            CndImporter importer = new CndImporter(context, true);
+            CndImporter importer = new CndImporter(context);
             importer.importFrom(cnd, problems);
+            if (!problems.isEmpty()) {
+                fail("Found issues with CND import");
+            }
 
             List<NodeTypeDefinition> ntds = importer.getNodeTypeDefinitions();
             // Retrieve node type manager from the session
