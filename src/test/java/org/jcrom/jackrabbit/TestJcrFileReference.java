@@ -31,6 +31,8 @@ import org.jcrom.Jcrom;
 import org.jcrom.entities.JcrFileReferenceByPathParentNode;
 import org.jcrom.entities.JcrFileReferenceParentNode;
 import org.jcrom.entities.ReferenceableJCRFile;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +46,21 @@ import org.slf4j.LoggerFactory;
 public class TestJcrFileReference extends TestAbstract {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestJcrFileReference.class);
 	
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
+
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
     @Test
     public void testFileReference() throws JcrMappingException, RepositoryException {
         LOGGER.info("JcrFileNode with reference");
 
         // initialise jcrom
-        Jcrom jcrom = new Jcrom();
         jcrom.map(JcrFileReferenceParentNode.class);
         jcrom.map(ReferenceableJCRFile.class);
 
@@ -72,14 +83,14 @@ public class TestJcrFileReference extends TestAbstract {
         parent.setName("parent");
         parent.setbRef(fileRef);
 
-        jcrom.addNode(session.getRootNode(), fileRef, new String[] { "mix:referenceable" });
-        String instanceBID = session.getRootNode().getNode("fileRef").getIdentifier();
-        jcrom.addNode(session.getRootNode(), parent);
+        jcrom.addNode(getRootNode(), fileRef, new String[] { "mix:referenceable" });
+        String instanceBID = getRootNode().getNode("fileRef").getIdentifier();
+        jcrom.addNode(getRootNode(), parent);
 
-        assertEquals(session.getRootNode().getNode("parent").getProperty("bRef").getType(), PropertyType.REFERENCE);
-        assertEquals(session.getRootNode().getNode("parent").getProperty("bRef").getString(), instanceBID);
+        assertEquals(getRootNode().getNode("parent").getProperty("bRef").getType(), PropertyType.REFERENCE);
+        assertEquals(getRootNode().getNode("parent").getProperty("bRef").getString(), instanceBID);
 
-        JcrFileReferenceParentNode entityFromJcr = jcrom.fromNode(JcrFileReferenceParentNode.class, session.getRootNode().getNode("parent"));
+        JcrFileReferenceParentNode entityFromJcr = jcrom.fromNode(JcrFileReferenceParentNode.class, getRootNode().getNode("parent"));
         assertEquals("image/jpeg", entityFromJcr.getbRef().getMimeType());
         assertEquals(imageFile.length(), entityFromJcr.getbRef().getDataProvider().getContentLength());
         ///session.save();
@@ -90,7 +101,6 @@ public class TestJcrFileReference extends TestAbstract {
         LOGGER.info("JcrFileNode referenced by path");
 
         // initialise jcrom
-        Jcrom jcrom = new Jcrom();
         jcrom.map(JcrFileReferenceByPathParentNode.class);
         jcrom.map(ReferenceableJCRFile.class);
 
@@ -113,14 +123,14 @@ public class TestJcrFileReference extends TestAbstract {
         parent.setName("parent");
         parent.setbRef(fileRef);
 
-        jcrom.addNode(session.getRootNode(), fileRef, new String[] { "mix:referenceable" });
-        String instancePath = session.getRootNode().getNode("fileRef").getPath();
-        jcrom.addNode(session.getRootNode(), parent);
+        jcrom.addNode(getRootNode(), fileRef, new String[] { "mix:referenceable" });
+        String instancePath = getRootNode().getNode("fileRef").getPath();
+        jcrom.addNode(getRootNode(), parent);
 
-        assertEquals(session.getRootNode().getNode("parent").getProperty("bRef").getType(), PropertyType.STRING);
-        assertEquals(session.getRootNode().getNode("parent").getProperty("bRef").getString(), instancePath);
+        assertEquals(getRootNode().getNode("parent").getProperty("bRef").getType(), PropertyType.STRING);
+        assertEquals(getRootNode().getNode("parent").getProperty("bRef").getString(), instancePath);
 
-        JcrFileReferenceByPathParentNode entityFromJcr = jcrom.fromNode(JcrFileReferenceByPathParentNode.class, session.getRootNode().getNode("parent"));
+        JcrFileReferenceByPathParentNode entityFromJcr = jcrom.fromNode(JcrFileReferenceByPathParentNode.class, getRootNode().getNode("parent"));
         assertEquals("image/jpeg", entityFromJcr.getbRef().getMimeType());
         assertEquals(imageFile.length(), entityFromJcr.getbRef().getDataProvider().getContentLength());
         ///session.save();

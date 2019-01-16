@@ -33,6 +33,8 @@ import org.jcrom.annotations.JcrNode;
 import org.jcrom.callback.DefaultJcromCallback;
 import org.jcrom.entities.Parent;
 import org.jcrom.util.PathUtils;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,13 +63,22 @@ public class TestJcromCallback extends TestAbstract {
 
         return parent;
     }
+    
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
 
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
     @Test
     public void testJcromCallback() throws RepositoryException {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(Parent.class);
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         String name = "John Doe";
 

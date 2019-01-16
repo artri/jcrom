@@ -27,7 +27,6 @@ import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.Value;
 
 import org.jcrom.annotations.JcrNode;
@@ -56,8 +55,6 @@ public class Jcrom {
     private final Validator validator;
 
     private AnnotationReader annotationReader;
-
-    private static final ThreadLocal<Session> currentSession = new ThreadLocal<Session>();
 
     private SessionFactory sessionFactory;
 
@@ -120,16 +117,6 @@ public class Jcrom {
         this(cleanNames, dynamicInstantiation, classesToMap, getTypeHandler());
     }
 
-    private static TypeHandler getTypeHandler() {
-        Class<?> clazz = null;
-        try {
-            // Try to find a Java FX class. If found, uses the JavaFXTypeHandler class
-            clazz = Class.forName("javafx.beans.property.ObjectProperty");
-        } catch (Exception e) {
-        }
-        return clazz == null ? new DefaultTypeHandler() : new JavaFXTypeHandler();
-    }
-
     /**
      * Create a new Jcrom instance.
      * 
@@ -148,6 +135,17 @@ public class Jcrom {
         }
     }
 
+    private static TypeHandler getTypeHandler() {
+        Class<?> clazz = null;
+        try {
+            // Try to find a Java FX class. If found, uses the JavaFXTypeHandler class
+            clazz = Class.forName("javafx.beans.property.ObjectProperty");
+        } catch (Exception e) {
+        	LOGGER.error(e.getMessage(), e);
+        }
+        return clazz == null ? new DefaultTypeHandler() : new JavaFXTypeHandler();
+    }
+    
     /**
      * Add a class that this instance can map to/from JCR nodes. This method will validate the class, and all mapped
      * JcrEntity implementations referenced from this class.
@@ -461,14 +459,6 @@ public class Jcrom {
         }
     }
 
-    public static void setCurrentSession(Session session) {
-        currentSession.set(session);
-    }
-
-    public static Session getCurrentSession() {
-        return currentSession.get();
-    }
-
     public void setAnnotationReader(AnnotationReader annotationReader) {
         this.annotationReader = annotationReader;
     }
@@ -477,14 +467,14 @@ public class Jcrom {
         return annotationReader;
     }
 
-    public void setSessionFactory(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
-    }
-
     public SessionFactory getSessionFactory() {
         return sessionFactory;
     }
 
+    public void setSessionFactory(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+    
     public void logNodeInfos(Node node) throws RepositoryException {
     	if (!LOGGER.isInfoEnabled()) {
     		return;

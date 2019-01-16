@@ -43,8 +43,8 @@ class ChildNodeListLoader extends AbstractLazyLoader {
     private final NodeFilter nodeFilter;
     private final JcrChildNode jcrChildNode;
 
-    ChildNodeListLoader(Class<?> objectClass, Object parentObject, String containerPath, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode) {
-        super(session, mapper);
+    ChildNodeListLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode) {
+        super(mapper);
         this.objectClass = objectClass;
         this.parentObject = parentObject;
         this.containerPath = containerPath;

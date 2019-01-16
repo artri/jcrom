@@ -36,9 +36,10 @@ import javafx.collections.FXCollections;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
-import org.jcrom.Jcrom;
 import org.jcrom.entities.JavaFXEntity;
 import org.jcrom.util.PathUtils;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -135,12 +136,21 @@ public class TestJavaFX extends TestAbstract {
         return entity;
     }
 
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
+
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
     @Test
     public void testJavaFX() throws RepositoryException {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(JavaFXEntity.class);
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         String name = "Java FX Entity";
 

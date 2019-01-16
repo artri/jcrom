@@ -17,8 +17,6 @@
  */
 package org.jcrom.dao;
 
-import javax.jcr.Session;
-
 import org.jcrom.Jcrom;
 import org.jcrom.dao.AbstractJcrDAO;
 import org.jcrom.entities.CustomJCRFile;
@@ -35,7 +33,7 @@ public class CustomJCRFileDAO extends AbstractJcrDAO<CustomJCRFile> {
      * @param session
      * @param jcrom
      */
-    public CustomJCRFileDAO(Session session, Jcrom jcrom) {
-        super(CustomJCRFile.class, session, jcrom);
+    public CustomJCRFileDAO(Jcrom jcrom) {
+        super(CustomJCRFile.class, jcrom);
     }
 }

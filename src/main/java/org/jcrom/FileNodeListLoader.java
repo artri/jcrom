@@ -43,8 +43,8 @@ class FileNodeListLoader extends AbstractLazyLoader {
     private final int depth;
     private final NodeFilter nodeFilter;
 
-    FileNodeListLoader(Class<?> objectClass, Object parentObject, String fileContainerPath, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
-        super(session, mapper);
+    FileNodeListLoader(Class<?> objectClass, Object parentObject, String fileContainerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
+        super(mapper);
         this.objectClass = objectClass;
         this.parentObject = parentObject;
         this.jcrFileNode = jcrFileNode;

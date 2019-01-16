@@ -443,14 +443,14 @@ class FileNodeMapper {
                 Class<?> childObjClass = ReflectionUtils.getTypeArgumentOfParameterizedClass(field.getGenericType(), 1, 0);
                 if (jcrFileNode.lazy()) {
                     // lazy loading
-                    children.put(childNode.getName(), ProxyFactory.createFileNodeListProxy(childObjClass, obj, fileContainer.getPath(), fileContainer.getSession(), mapper, depth, nodeFilter, jcrFileNode));
+                    children.put(childNode.getName(), ProxyFactory.createFileNodeListProxy(childObjClass, obj, fileContainer.getPath(), mapper, depth, nodeFilter, jcrFileNode));
                 } else {
                     children.put(childNode.getName(), getFileList(childObjClass, childNode, obj, jcrFileNode, depth, nodeFilter, mapper));
                 }
             } else {
                 if (jcrFileNode.lazy()) {
                     // lazy loading
-                    children.put(childNode.getName(), ProxyFactory.createFileNodeProxy(mapParamClass, obj, fileContainer.getPath(), fileContainer.getSession(), mapper, depth, nodeFilter, jcrFileNode));
+                    children.put(childNode.getName(), ProxyFactory.createFileNodeProxy(mapParamClass, obj, fileContainer.getPath(), mapper, depth, nodeFilter, jcrFileNode));
                 } else {
                     children.put(childNode.getName(), getSingleFile(mapParamClass, fileContainer, obj, jcrFileNode, depth, nodeFilter, mapper));
                 }
@@ -473,7 +473,7 @@ class FileNodeMapper {
                 Class<?> childObjClass = ReflectionUtils.getParameterizedClass(field.getGenericType());
                 if (jcrFileNode.lazy()) {
                     // lazy loading
-                    children = ProxyFactory.createFileNodeListProxy(childObjClass, obj, fileContainer.getPath(), node.getSession(), mapper, depth, nodeFilter, jcrFileNode);
+                    children = ProxyFactory.createFileNodeListProxy(childObjClass, obj, fileContainer.getPath(), mapper, depth, nodeFilter, jcrFileNode);
                 } else {
                     // eager loading
                     children = getFileList(childObjClass, fileContainer, obj, jcrFileNode, depth, nodeFilter, mapper);
@@ -490,7 +490,7 @@ class FileNodeMapper {
                     Class type = typeHandler.getType(field.getType(), field.getGenericType(), obj);
                     if (jcrFileNode.lazy()) {
                         // lazy loading
-                        file = ProxyFactory.createFileNodeProxy(type, obj, fileContainer.getPath(), node.getSession(), mapper, depth, nodeFilter, jcrFileNode);
+                        file = ProxyFactory.createFileNodeProxy(type, obj, fileContainer.getPath(), mapper, depth, nodeFilter, jcrFileNode);
                     } else {
                         // eager loading
                         file = getSingleFile(type, fileContainer, obj, jcrFileNode, depth, nodeFilter, mapper);

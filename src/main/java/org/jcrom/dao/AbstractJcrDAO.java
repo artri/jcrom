@@ -69,7 +69,6 @@ import org.jcrom.util.ReflectionUtils;
 public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
 
     protected final Jcrom jcrom;
-    protected final Session session;
     protected final Class<T> entityClass;
     protected final String[] mixinTypes;
     protected final boolean isVersionable;
@@ -86,17 +85,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      * @param jcrom the Jcrom instance to use for object mapping
      */
     public AbstractJcrDAO(Jcrom jcrom) {
-        this(null, null, jcrom, new String[0]);
-    }
-
-    /**
-     * Constructor. The entityClass is retrieved from {@link ParameterizedType} in the superclass.
-     * 
-     * @param session the current JCR session
-     * @param jcrom the Jcrom instance to use for object mapping
-     */
-    public AbstractJcrDAO(Session session, Jcrom jcrom) {
-        this(null, session, jcrom, new String[0]);
+        this(null, jcrom, new String[0]);
     }
 
     /**
@@ -109,18 +98,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      * @param jcrom the Jcrom instance to use for object mapping
      */
     public AbstractJcrDAO(Class<T> entityClass, Jcrom jcrom) {
-        this(entityClass, null, jcrom, new String[0]);
-    }
-
-    /**
-     * Constructor.
-     * 
-     * @param entityClass the class handled by this DAO implementation
-     * @param session the current JCR session
-     * @param jcrom the Jcrom instance to use for object mapping
-     */
-    public AbstractJcrDAO(Class<T> entityClass, Session session, Jcrom jcrom) {
-        this(entityClass, session, jcrom, new String[0]);
+        this(entityClass, jcrom, new String[0]);
     }
 
     /**
@@ -132,7 +110,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      * @param mixinTypes an array of mixin types to apply to new nodes
      */
     @SuppressWarnings("unchecked")
-    public AbstractJcrDAO(Class<T> entityClass, Session session, Jcrom jcrom, String[] mixinTypes) {
+    public AbstractJcrDAO(Class<T> entityClass, Jcrom jcrom, String[] mixinTypes) {
         if (entityClass == null) {
             Class<?> clazz = getClass();
             while (!(clazz.getGenericSuperclass() instanceof ParameterizedType)) {
@@ -142,7 +120,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         } else {
             this.entityClass = entityClass;
         }
-        this.session = session;
         this.jcrom = jcrom;
         this.mixinTypes = new String[mixinTypes.length];
         System.arraycopy(mixinTypes, 0, this.mixinTypes, 0, mixinTypes.length);
@@ -153,10 +130,14 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         return entityClass;
     }
 
-    protected Session getSession() {
-        return session;
+    protected final Session getSession() {
+        return jcrom.getSessionFactory().getSession();
     }
 
+    protected final void releaseSession() {
+    	jcrom.getSessionFactory().releaseSession();
+    }
+    
     protected Jcrom getJcrom() {
         return jcrom;
     }
@@ -185,7 +166,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     protected Node getNodeById(String id) throws RepositoryException {
-        // return getSession().getNodeByUUID(uuid);
         return getSession().getNodeByIdentifier(id);
     }
 

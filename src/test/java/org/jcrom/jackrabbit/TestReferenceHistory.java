@@ -29,6 +29,8 @@ import org.jcrom.entities.Folder;
 import org.jcrom.entities.FolderReference;
 import org.jcrom.entities.HierarchyNode;
 import org.jcrom.util.NodeFilter;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -40,21 +42,25 @@ import org.junit.Test;
  */
 public class TestReferenceHistory extends TestAbstract {
 
-    /**
-     * .
-     * 
-     * @throws Exception
-     */
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
+
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
     @Test
     public final void testReferenceHistoryMaxDepth() throws Exception {
-        Jcrom jcrom = new Jcrom(false, true);
         jcrom.map(HierarchyNode.class);
         jcrom.map(Folder.class);
         jcrom.map(FolderReference.class);
         jcrom.map(Document.class);
 
         // create root node
-        final Node junitNode = this.session.getRootNode().addNode("junit");
+        final Node junitNode = getRootNode().addNode("junit");
 
         Folder directoryA = new Folder();
         directoryA.setName("Directory_A");
@@ -77,7 +83,7 @@ public class TestReferenceHistory extends TestAbstract {
 
         // create the nodes
         jcrom.addNode(junitNode, directoryA);
-        session.save();
+        save();
 
         // create a reference and add to directory A1
         FolderReference folderReference = new FolderReference();
@@ -87,22 +93,13 @@ public class TestReferenceHistory extends TestAbstract {
 
         //Node directoryA1Node = session.getNodeByUUID(directoryA1.getUuid());
         //jcrom.updateNode(directoryA1Node, directoryA1);
-        Node directoryA1Node = session.getNodeByIdentifier(directoryA1.getId());
+        Node directoryA1Node = getSession().getNodeByIdentifier(directoryA1.getId());
         jcrom.updateNode(directoryA1Node, directoryA1);
-        session.save();
-        session.logout();
-
-        jcrom = new Jcrom(false, true);
-        jcrom.map(HierarchyNode.class);
-        jcrom.map(Folder.class);
-        jcrom.map(FolderReference.class);
-        jcrom.map(Document.class);
-
-        session = repo.login(new SimpleCredentials(userID, password));
-
+        save();
+        jcrom.getSessionFactory().releaseSession();
+        
         // now search the for
-        //Node directoryANode = session.getNodeByUUID(directoryA.getUuid());
-        Node directoryANode = session.getNodeByIdentifier(directoryA.getId());
+        Node directoryANode = getSession().getNodeByIdentifier(directoryA.getId());
         Folder folder = jcrom.fromNode(Folder.class, directoryANode, NodeFilter.INCLUDE_ALL, 3);
 
         assertEquals("Wrong child count of Directory_A.", 2, folder.getChildren().size());

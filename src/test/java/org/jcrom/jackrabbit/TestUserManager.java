@@ -24,7 +24,6 @@ import java.util.NoSuchElementException;
 
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
-import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.security.AccessControlEntry;
@@ -54,23 +53,22 @@ import org.junit.Test;
  */
 public class TestUserManager extends TestAbstract {
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUpRepository();
-        session = repo.login(new SimpleCredentials("admin", "admin".toCharArray()));
-    }
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
 
-    @After
-    public void tearDown() throws Exception {
-        super.tearDownRepository();
-    }
-
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
     @Ignore
     @Test
     public void testGrantallRightsToEveryone() throws AccessControlException, RepositoryException {
         String path = "/some/path";
 
-        AccessControlManager aMgr = session.getAccessControlManager();
+        AccessControlManager aMgr = getSession().getAccessControlManager();
 
         // create a privilege set with jcr:all
         Privilege[] privileges = new Privilege[] { aMgr.privilegeFromName(Privilege.JCR_ALL) };
@@ -93,14 +91,14 @@ public class TestUserManager extends TestAbstract {
         aMgr.setPolicy(path, acl);
 
         // and the session must be saved for the changes to be applied
-        session.save();
+        save();
     }
 
     @Ignore
     @Test
     public void testSettingPrincipalBasedACL() throws RepositoryException {
         // usual entry point into the Jackrabbit API
-        JackrabbitSession js = (JackrabbitSession) session;
+        JackrabbitSession js = (JackrabbitSession) getSession();
 
         // get user/principal for whom to read/set ACLs
 
@@ -108,15 +106,15 @@ public class TestUserManager extends TestAbstract {
         // assume the users are actually stored in the JCR with the Jackrabbit UserManagement; an example
         // are external users provided by a custom LoginModule via LDAP
         PrincipalManager pMgr = js.getPrincipalManager();
-        Principal principal = pMgr.getPrincipal(session.getUserID());
+        Principal principal = pMgr.getPrincipal(getSession().getUserID());
 
         // alternatively: get the current user as Authorizable from the user management
         // (there is a one-to-one mapping between Authorizables and Principals)
-        User user = ((User) js.getUserManager().getAuthorizable(session.getUserID()));
+        User user = ((User) js.getUserManager().getAuthorizable(getSession().getUserID()));
         Principal principal2 = user.getPrincipal();
 
         // get the Jackrabbit access control manager
-        JackrabbitAccessControlManager acMgr = (JackrabbitAccessControlManager) session.getAccessControlManager();
+        JackrabbitAccessControlManager acMgr = (JackrabbitAccessControlManager) getSession().getAccessControlManager();
 
         JackrabbitAccessControlPolicy[] ps = acMgr.getPolicies(principal); // or getApplicablePolicies()
         JackrabbitAccessControlList list = (JackrabbitAccessControlList) ps[0];
@@ -131,7 +129,7 @@ public class TestUserManager extends TestAbstract {
         // add entry
         Privilege[] privileges = new Privilege[] { acMgr.privilegeFromName(Privilege.JCR_READ) };
         Map<String, Value> restrictions = new HashMap<String, Value>();
-        ValueFactory vf = session.getValueFactory();
+        ValueFactory vf = getSession().getValueFactory();
         restrictions.put("rep:nodePath", vf.createValue("/some/path", PropertyType.PATH));
         restrictions.put("rep:glob", vf.createValue("*"));
         list.addEntry(principal, privileges, true /* allow or deny */, restrictions);
@@ -141,24 +139,24 @@ public class TestUserManager extends TestAbstract {
 
         // finally set policy again & save
         acMgr.setPolicy(list.getPath(), list);
-        session.save();
+        save();
     }
 
     public boolean createUser(String name, String pass) throws AuthorizableExistsException, RepositoryException {
 
         // usual entry point into the Jackrabbit API
-        JackrabbitSession js = (JackrabbitSession) session;
+        JackrabbitSession js = (JackrabbitSession) getSession();
         UserManager um = js.getUserManager();
 
         PrincipalImpl p = new PrincipalImpl(name);
         String usersPath = "/" + name;
         User u = um.createUser(name, pass, p, null);
-        u.setProperty("homeFolder", session.getValueFactory().createValue(usersPath));
+        u.setProperty("homeFolder", getSession().getValueFactory().createValue(usersPath));
         // "HOME" folder for the brand new user
         // createUsersFolder(name, session);
         // Assign permissions to the "HOME" folder of the just created user
         // assignInitialPermissions(u, u.getPrincipal(), usersPath, session);
-        session.save();
+        save();
         return true;
     }
 }

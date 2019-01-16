@@ -308,7 +308,7 @@ class ChildNodeMapper {
                 // each value in the map is a list of child nodes
                 if (jcrChildNode.lazy()) {
                     // lazy loading
-                    children.put(childNode.getName(), ProxyFactory.createChildNodeListProxy(mapParamClass, parentObj, childNode.getPath(), childNode.getSession(), mapper, depth, nodeFilter, jcrChildNode));
+                    children.put(childNode.getName(), ProxyFactory.createChildNodeListProxy(mapParamClass, parentObj, childNode.getPath(), mapper, depth, nodeFilter, jcrChildNode));
                 } else {
                     // eager loading
                     children.put(childNode.getName(), getChildrenList(mapParamClass, childNode, parentObj, mapper, depth, nodeFilter, jcrChildNode));
@@ -317,7 +317,7 @@ class ChildNodeMapper {
                 // each value in the map is a child node
                 if (jcrChildNode.lazy()) {
                     // lazy loading
-                	children.put(childNode.getName(), ProxyFactory.createChildNodeProxy(mapper.findClassFromNode(mapParamClass, childNode), parentObj, childNode.getPath(), childNode.getSession(), mapper, depth, nodeFilter, false));
+                	children.put(childNode.getName(), ProxyFactory.createChildNodeProxy(mapper.findClassFromNode(mapParamClass, childNode), parentObj, childNode.getPath(), mapper, depth, nodeFilter, false));
                 } else {
                     // eager loading
                     children.put(childNode.getName(), getSingleChild(mapParamClass, childNode, parentObj, mapper, depth, nodeFilter));
@@ -352,7 +352,7 @@ class ChildNodeMapper {
                 List<?> children;
                 if (jcrChildNode.lazy()) {
                     // lazy loading
-                    children = ProxyFactory.createChildNodeListProxy(childObjClass, obj, childrenContainer.getPath(), node.getSession(), mapper, depth, nodeFilter, jcrChildNode);
+                    children = ProxyFactory.createChildNodeListProxy(childObjClass, obj, childrenContainer.getPath(), mapper, depth, nodeFilter, jcrChildNode);
                 } else {
                     // eager loading
                     children = getChildrenList(childObjClass, childrenContainer, obj, mapper, depth, nodeFilter, jcrChildNode);
@@ -370,7 +370,7 @@ class ChildNodeMapper {
                 if (childrenContainer.hasNodes() || !jcrChildNode.createContainerNode()) {
                     if (jcrChildNode.lazy()) {
                         // lazy loading
-                        typeHandler.setObject(field, obj, ProxyFactory.createChildNodeProxy(childObjClass, obj, childrenContainer.getPath(), node.getSession(), mapper, depth, nodeFilter, jcrChildNode.createContainerNode()));
+                        typeHandler.setObject(field, obj, ProxyFactory.createChildNodeProxy(childObjClass, obj, childrenContainer.getPath(), mapper, depth, nodeFilter, jcrChildNode.createContainerNode()));
                     } else {
                         // eager loading
                         if (jcrChildNode.createContainerNode()) {

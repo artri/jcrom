@@ -17,8 +17,6 @@
  */
 package org.jcrom.modeshape;
 
-import javax.jcr.Session;
-
 import org.jcrom.Jcrom;
 import org.jcrom.dao.AbstractJcrDAO;
 
@@ -29,7 +27,7 @@ import org.jcrom.dao.AbstractJcrDAO;
  */
 public class VersionedDAO extends AbstractJcrDAO<VersionedEntity> {
 
-    public VersionedDAO(Session session, Jcrom jcrom) {
-        super(VersionedEntity.class, session, jcrom);
+    public VersionedDAO(Jcrom jcrom) {
+        super(VersionedEntity.class, jcrom);
     }
 }

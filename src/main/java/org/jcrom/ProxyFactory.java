@@ -20,8 +20,6 @@ package org.jcrom;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import javax.jcr.Session;
-
 import net.sf.cglib.proxy.Enhancer;
 
 import org.jcrom.annotations.JcrChildNode;
@@ -40,35 +38,35 @@ public final class ProxyFactory {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T createChildNodeProxy(Class<T> c, Object parentObj, String containerPath, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, boolean pathIsContainer) {
-        ChildNodeLoader childNodeLoader = new ChildNodeLoader(c, parentObj, containerPath, session, mapper, depth, nodeFilter, pathIsContainer);
+    public static <T> T createChildNodeProxy(Class<T> c, Object parentObj, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter, boolean pathIsContainer) {
+        ChildNodeLoader childNodeLoader = new ChildNodeLoader(c, parentObj, containerPath, mapper, depth, nodeFilter, pathIsContainer);
         return (T) Enhancer.create(c, childNodeLoader);
     }
 
-    public static List<?> createChildNodeListProxy(Class<?> c, Object parentObj, String containerPath, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode) {
-        ChildNodeListLoader childNodeListLoader = new ChildNodeListLoader(c, parentObj, containerPath, session, mapper, depth, nodeFilter, jcrChildNode);
+    public static List<?> createChildNodeListProxy(Class<?> c, Object parentObj, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode) {
+        ChildNodeListLoader childNodeListLoader = new ChildNodeListLoader(c, parentObj, containerPath, mapper, depth, nodeFilter, jcrChildNode);
         return (List<?>) Enhancer.create(List.class, childNodeListLoader);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T createFileNodeProxy(Class<T> c, Object obj, String fileContainerPath, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
-        FileNodeLoader fileNodeLoader = new FileNodeLoader(c, obj, fileContainerPath, session, mapper, depth, nodeFilter, jcrFileNode);
+    public static <T> T createFileNodeProxy(Class<T> c, Object obj, String fileContainerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
+        FileNodeLoader fileNodeLoader = new FileNodeLoader(c, obj, fileContainerPath, mapper, depth, nodeFilter, jcrFileNode);
         return (T) Enhancer.create(c, fileNodeLoader);
     }
 
-    public static List<?> createFileNodeListProxy(Class<?> c, Object obj, String fileContainerPath, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
-        FileNodeListLoader fileNodeListLoader = new FileNodeListLoader(c, obj, fileContainerPath, session, mapper, depth, nodeFilter, jcrFileNode);
+    public static List<?> createFileNodeListProxy(Class<?> c, Object obj, String fileContainerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
+        FileNodeListLoader fileNodeListLoader = new FileNodeListLoader(c, obj, fileContainerPath, mapper, depth, nodeFilter, jcrFileNode);
         return (List<?>) Enhancer.create(List.class, fileNodeListLoader);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T createReferenceProxy(Class<T> c, Object parentObject, String nodePath, String propertyName, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
-        ReferenceLoader refLoader = new ReferenceLoader(c, parentObject, nodePath, propertyName, session, mapper, depth, nodeFilter, field);
+    public static <T> T createReferenceProxy(Class<T> c, Object parentObject, String nodePath, String propertyName, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
+        ReferenceLoader refLoader = new ReferenceLoader(c, parentObject, nodePath, propertyName, mapper, depth, nodeFilter, field);
         return (T) Enhancer.create(c, refLoader);
     }
 
-    public static List<?> createReferenceListProxy(Class<?> c, Object parentObject, String nodePath, String propertyName, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
-        ReferenceListLoader refListLoader = new ReferenceListLoader(c, parentObject, nodePath, propertyName, session, mapper, depth, nodeFilter, field);
+    public static List<?> createReferenceListProxy(Class<?> c, Object parentObject, String nodePath, String propertyName, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
+        ReferenceListLoader refListLoader = new ReferenceListLoader(c, parentObject, nodePath, propertyName, mapper, depth, nodeFilter, field);
         return (List<?>) Enhancer.create(List.class, refListLoader);
     }
 }

@@ -26,6 +26,8 @@ import org.jcrom.Jcrom;
 import org.jcrom.entities.Child;
 import org.jcrom.entities.DynamicObject;
 import org.jcrom.entities.ReferencedEntity;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -36,13 +38,21 @@ import org.junit.Test;
  * @author Nicolas Dos Santos
  */
 public class TestInstantiation extends TestAbstract {
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
 
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
     @Test
     public void test_dynamic_map_instantiation() throws Exception {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(DynamicObject.class).map(ReferencedEntity.class);
 
-        Node rootNode = session.getRootNode().addNode("test");
+        Node rootNode = getRootNode().addNode("test");
 
         DynamicObject dyna = new DynamicObject();
         dyna.setName("Dynamic");
@@ -67,10 +77,9 @@ public class TestInstantiation extends TestAbstract {
 
     @Test
     public void test_dynamic_maps_stored_as_child_nodes_can_be_retrieved_by_key() throws Exception {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(DynamicObject.class).map(Child.class);
 
-        Node rootNode = session.getRootNode().addNode("test");
+        Node rootNode = getRootNode().addNode("test");
 
         DynamicObject dyna = new DynamicObject();
         dyna.setName("Dynamic");

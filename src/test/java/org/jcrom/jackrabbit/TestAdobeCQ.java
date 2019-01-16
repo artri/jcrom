@@ -31,7 +31,6 @@ import javax.jcr.nodetype.NodeType;
 
 import org.apache.jackrabbit.commons.cnd.CndImporter;
 import org.jcrom.Jcrom;
-import org.jcrom.TestReflection;
 import org.jcrom.entities.PageContentNode;
 import org.jcrom.util.PathUtils;
 import org.junit.Test;
@@ -72,7 +71,7 @@ public class TestAdobeCQ extends TestAbstract {
         FileReader cnd = null;
         try {
             cnd = new FileReader(new File(cndResource.toURI()));
-            NodeType[] nodeTypes = CndImporter.registerNodeTypes(cnd, session);
+            NodeType[] nodeTypes = CndImporter.registerNodeTypes(cnd, jcrom.getSessionFactory().getSession());
             for (NodeType nt : nodeTypes) {
                 LOGGER.info("Registered: {}", nt.getName());
             }
@@ -98,10 +97,9 @@ public class TestAdobeCQ extends TestAbstract {
 
     @Test
     public void testAdobeCQ() throws RepositoryException {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(PageContentNode.class);
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         String name = "Page Content Node 1";
         String title = "this is page content node 1";

@@ -17,8 +17,6 @@
  */
 package org.jcrom.dao;
 
-import javax.jcr.Session;
-
 import org.jcrom.Jcrom;
 import org.jcrom.dao.AbstractJcrDAO;
 import org.jcrom.entities.Child;
@@ -32,8 +30,8 @@ public class ChildDAO extends AbstractJcrDAO<Child> {
 
     private static final String[] MIXIN_TYPES = { "mix:referenceable" };
 
-    public ChildDAO(Session session, Jcrom jcrom) {
-        super(Child.class, session, jcrom, MIXIN_TYPES);
+    public ChildDAO(Jcrom jcrom) {
+        super(Child.class, jcrom, MIXIN_TYPES);
     }
 
 }

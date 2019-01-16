@@ -42,6 +42,11 @@
         
 		<org.slf4j.version>1.7.5</org.slf4j.version>
 		<logback.version>1.0.13</logback.version>
+		
+		<javax.jcr.version>2.0</javax.jcr.version>
+		<cglib.version>3.2.10</cglib.version>
+		<org.apache.tika.version>1.20</org.apache.tika.version>
+		
 		<junit.version>4.12</junit.version>        
     </properties>
 
@@ -62,26 +67,7 @@
             <artifactId>slf4j-api</artifactId>
             <version>${org.slf4j.version}</version>
         </dependency>
-            
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-core</artifactId>
-            <version>2.7.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-unit-test</artifactId>
-            <version>3.3.0.Final</version>
-            <scope>test</scope>
-        </dependency>
+
         <!--
         <dependency>
             <groupId>com.day.cq.wcm</groupId>
@@ -102,18 +88,21 @@
         <dependency>
             <groupId>javax.jcr</groupId>
             <artifactId>jcr</artifactId>
-            <version>2.0</version>
+            <version>${javax.jcr.version}</version>
         </dependency>
+ 
         <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>
-            <version>2.2.2</version>
+            <version>${cglib.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
-            <version>1.1</version>
+            <version>${org.apache.tika.version}</version>
         </dependency>
+
         <!-- cf. http://notaboekje.blogspot.fr/2012/02/creer-un-projet-maven-pour-javafx.html  -->
         <!-- Add 'javafx.rt.jar' property in maven settings.xml, representing the path of the JavaFX jar -->
         <dependency>
@@ -123,6 +112,26 @@
             <systemPath>${javafx.rt.jar}</systemPath>
             <scope>system</scope>
         </dependency>
+        
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jackrabbit</groupId>
+            <artifactId>jackrabbit-core</artifactId>
+            <version>2.7.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-unit-test</artifactId>
+            <version>3.3.0.Final</version>
+            <scope>test</scope>
+        </dependency>        
     </dependencies>
 
     <build>

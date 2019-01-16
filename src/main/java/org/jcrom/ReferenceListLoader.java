@@ -45,8 +45,8 @@ class ReferenceListLoader extends AbstractLazyLoader {
     private final NodeFilter nodeFilter;
     private final Field field;
 
-    ReferenceListLoader(Class<?> objClass, Object parentObject, String nodePath, String propertyName, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
-        super(session, mapper);
+    ReferenceListLoader(Class<?> objClass, Object parentObject, String nodePath, String propertyName, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
+        super(mapper);
         this.objClass = objClass;
         this.parentObject = parentObject;
         this.nodePath = nodePath;

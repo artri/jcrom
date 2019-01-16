@@ -37,6 +37,8 @@ import javax.jcr.Value;
 import org.jcrom.Jcrom;
 import org.jcrom.entities.EntityWithConverter;
 import org.jcrom.entities.EntityWithConverterChild;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -45,12 +47,21 @@ import org.junit.Test;
  */
 public class TestConverter extends TestAbstract {
 
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
+
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
     @Test
     public void testConverter() throws RepositoryException {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(EntityWithConverter.class);
 
-        Node rootNode = session.getRootNode().addNode("converterTest");
+        Node rootNode = getRootNode().addNode("converterTest");
 
         // Create entity
         EntityWithConverter entity = new EntityWithConverter();
@@ -73,7 +84,7 @@ public class TestConverter extends TestAbstract {
 
         // Create new node
         Node newNode = jcrom.addNode(rootNode, entity);
-        session.save();
+        save();
 
         // Check values of the new node
         assertEquals("50:100:150:200", newNode.getProperty("color").getString());

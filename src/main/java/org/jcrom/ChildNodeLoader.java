@@ -42,12 +42,12 @@ class ChildNodeLoader extends AbstractLazyLoader {
     private final NodeFilter nodeFilter;
     private final boolean pathIsContainer;
 
-    ChildNodeLoader(Class<?> objectClass, Object parentObject, String containerPath, Session session, Mapper mapper, int depth, NodeFilter nodeFilter) {
-        this(objectClass, parentObject, containerPath, session, mapper, depth, nodeFilter, true);
+    ChildNodeLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter) {
+        this(objectClass, parentObject, containerPath, mapper, depth, nodeFilter, true);
     }
 
-    ChildNodeLoader(Class<?> objectClass, Object parentObject, String containerPath, Session session, Mapper mapper, int depth, NodeFilter nodeFilter, boolean pathIsContainer) {
-        super(session, mapper);
+    ChildNodeLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter, boolean pathIsContainer) {
+        super(mapper);
         this.objectClass = objectClass;
         this.parentObject = parentObject;
         this.containerPath = containerPath;

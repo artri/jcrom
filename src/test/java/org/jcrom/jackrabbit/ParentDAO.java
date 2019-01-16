@@ -19,8 +19,6 @@ package org.jcrom.jackrabbit;
 
 import java.util.List;
 
-import javax.jcr.Session;
-
 import org.jcrom.Jcrom;
 import org.jcrom.dao.AbstractJcrDAO;
 import org.jcrom.entities.Parent;
@@ -35,8 +33,8 @@ public class ParentDAO extends AbstractJcrDAO<Parent> {
 
     private static final String[] MIXIN_TYPES = { "mix:referenceable" };
 
-    public ParentDAO(Session session, Jcrom jcrom) {
-        super(Parent.class, session, jcrom, MIXIN_TYPES);
+    public ParentDAO(Jcrom jcrom) {
+        super(Parent.class, jcrom, MIXIN_TYPES);
     }
 
     public List<Parent> findByLicense() throws Exception {

@@ -39,7 +39,7 @@ public class TestUpdateChildNodePerformance extends ModeShapeSingleUseTest {
         Jcrom jcrom = new Jcrom(false, true);
         jcrom.map(Parent.class);
         jcrom.map(Child.class);
-        ParentDAO parentDAO = new ParentDAO(session, jcrom);
+        ParentDAO parentDAO = new ParentDAO(jcrom);
         Parent parent = new Parent();
         parent.setName("Parent");
         parent.setPath("/");

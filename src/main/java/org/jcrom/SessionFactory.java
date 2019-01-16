@@ -17,7 +17,6 @@
  */
 package org.jcrom;
 
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 /**
@@ -36,8 +35,13 @@ public interface SessionFactory {
      * associated Session." (quote from javax.jcr.Session javadoc).
      * </p>
      * @return the session.
-     * @throws RepositoryException
+     * @throws JcrMappingException
      */
-    Session getSession() throws RepositoryException;
+    Session getSession() throws JcrMappingException;
 
+    /**
+     * Close the current JCR Session
+     * @param session the Session to close
+     */    
+    void releaseSession() throws JcrMappingException;
 }

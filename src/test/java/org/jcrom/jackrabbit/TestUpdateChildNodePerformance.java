@@ -19,9 +19,10 @@ package org.jcrom.jackrabbit;
 
 import static org.junit.Assert.assertTrue;
 
-import org.jcrom.Jcrom;
 import org.jcrom.entities.Child;
 import org.jcrom.entities.Parent;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,12 +34,12 @@ import org.slf4j.LoggerFactory;
  */
 public class TestUpdateChildNodePerformance extends TestAbstract {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestUpdateChildNodePerformance.class);
+	
     @Test
     public void testPerformance() {
-        Jcrom jcrom = new Jcrom(false, true);
         jcrom.map(Parent.class);
         jcrom.map(Child.class);
-        ParentDAO parentDAO = new ParentDAO(session, jcrom);
+        ParentDAO parentDAO = new ParentDAO(jcrom);
         Parent parent = new Parent();
         parent.setName("Parent");
         parent.setPath("/");

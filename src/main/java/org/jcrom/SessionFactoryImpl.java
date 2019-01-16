@@ -24,6 +24,9 @@ import javax.jcr.Session;
 import javax.jcr.Workspace;
 import javax.jcr.observation.ObservationManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Jcr Session Factory. This class is just a simple wrapper around the repository which facilitates session retrieval through a central point.
  * 
@@ -33,15 +36,16 @@ import javax.jcr.observation.ObservationManager;
  * @author Nicolas Dos Santos
  */
 public class SessionFactoryImpl implements SessionFactory {
-
-    private Repository repository;
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(SessionFactoryImpl.class);
+	
+    private Credentials credentials;
     private String workspaceName;
 
-    private Credentials credentials;
+    private Repository repository;
+    private final ThreadLocal<Session> currentSession = new ThreadLocal<Session>();
 
     private EventListenerDefinition eventListeners[] = new EventListenerDefinition[] {};
-
+    
     /**
      * Default Constructor
      * Use this constructor if you can set repository, credentials by injection
@@ -64,11 +68,43 @@ public class SessionFactoryImpl implements SessionFactory {
     }
 
     @Override
-    public Session getSession() throws RepositoryException {
-        Session session = repository.login(credentials, workspaceName);
-        return addListeners(session);
+    public Session getSession() throws JcrMappingException {
+	    Session session = currentSession.get();
+	    if (null == session) {
+	    	session = createSession();
+	    	currentSession.set(session);
+	    }
+		return session;
     }
-
+    
+    /**
+     * Close the current JCR Session
+     * @param session the Session to close
+     */
+    public void releaseSession() throws JcrMappingException {
+	    Session session = currentSession.get();
+	    if (null != session) {
+	    	LOGGER.debug("Closing the session");
+	    	currentSession.set(null);
+	    	session.logout();
+	    }
+    }
+    
+    /**
+     * Create a new JCR Session from the SessionFactory
+     * @throws JcrMappingException
+     * @return {@link Session}
+     */    
+    private Session createSession() throws JcrMappingException {
+        try {
+            Session session = repository.login(credentials, workspaceName);
+            return addListeners(session);
+        } catch (RepositoryException ex) {
+        	LOGGER.error(ex.getMessage(), ex);
+            throw new JcrMappingException("Could not open Jcr Session", ex);
+        }
+    }
+    
     /**
      * Hook for adding listeners to the newly returned session. We have to treat exceptions manually and can't
      * reply on the template.
@@ -83,7 +119,7 @@ public class SessionFactoryImpl implements SessionFactory {
 
         if (eventListeners != null && eventListeners.length > 0) {
             if (!supportsObservation(getRepository())) {
-                throw new IllegalArgumentException("repository " + getRepositoryInfo() + " does NOT support Observation; remove Listener definitions");
+                throw new IllegalStateException("repository " + getRepositoryInfo() + " does NOT support Observation; remove Listener definitions");
             }
             Workspace ws = session.getWorkspace();
             ObservationManager manager = ws.getObservationManager();

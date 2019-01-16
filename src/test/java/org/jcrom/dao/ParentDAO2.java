@@ -17,7 +17,6 @@
  */
 package org.jcrom.dao;
 
-import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
 
 import org.jcrom.Jcrom;
@@ -33,8 +32,8 @@ public class ParentDAO2 extends AbstractJcrDAO<Parent2> {
 
     private static final String[] MIXIN_TYPES = { NodeType.MIX_REFERENCEABLE };
 
-    public ParentDAO2(Session session, Jcrom jcrom) {
-        super(Parent2.class, session, jcrom, MIXIN_TYPES);
+    public ParentDAO2(Jcrom jcrom) {
+        super(Parent2.class, jcrom, MIXIN_TYPES);
     }
 
 }

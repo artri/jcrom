@@ -17,8 +17,6 @@
  */
 package org.jcrom.dao;
 
-import javax.jcr.Session;
-
 import org.jcrom.Jcrom;
 import org.jcrom.dao.AbstractJcrDAO;
 import org.jcrom.entities.EntityWithMapChildren;
@@ -29,7 +27,7 @@ import org.jcrom.entities.EntityWithMapChildren;
  */
 public class EntityWithMapChildrenDAO extends AbstractJcrDAO<EntityWithMapChildren> {
 
-    public EntityWithMapChildrenDAO(Session session, Jcrom jcrom, String[] mixinTypes) {
-        super(EntityWithMapChildren.class, session, jcrom, mixinTypes);
+    public EntityWithMapChildrenDAO(Jcrom jcrom, String[] mixinTypes) {
+        super(EntityWithMapChildren.class, jcrom, mixinTypes);
     }
 }

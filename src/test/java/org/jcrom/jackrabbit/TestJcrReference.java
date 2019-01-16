@@ -35,6 +35,8 @@ import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrName;
 import org.jcrom.annotations.JcrPath;
 import org.jcrom.annotations.JcrReference;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +48,22 @@ import org.slf4j.LoggerFactory;
  */
 public class TestJcrReference extends TestAbstract {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestJcrReference.class);
+	
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
+
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
 	@Test
 	public void testCreateWeakReference() throws JcrMappingException, RepositoryException {
 		LOGGER.info("assert creation of weak reference");
 
 		// initialise jcrom
-		Jcrom jcrom = new Jcrom();
 		jcrom.map(A1.class);
 		jcrom.map(A2.class);
 		jcrom.map(A3.class);
@@ -74,28 +86,28 @@ public class TestJcrReference extends TestAbstract {
 		instanceA3.setName("instanceA3");
 		instanceA3.setbRef(instanceB);
 
-		jcrom.addNode(session.getRootNode(), instanceB, new String[] { "mix:referenceable" });
-		jcrom.addNode(session.getRootNode(), instanceA1);
-		jcrom.addNode(session.getRootNode(), instanceA2);
-		jcrom.addNode(session.getRootNode(), instanceA3);
+		jcrom.addNode(getRootNode(), instanceB, new String[] { "mix:referenceable" });
+		jcrom.addNode(getRootNode(), instanceA1);
+		jcrom.addNode(getRootNode(), instanceA2);
+		jcrom.addNode(getRootNode(), instanceA3);
 
-		String instanceBID = session.getRootNode().getNode("instanceB").getIdentifier();
-		session.getRootNode().getNode("instanceB").remove();
+		String instanceBID = getRootNode().getNode("instanceB").getIdentifier();
+		getRootNode().getNode("instanceB").remove();
 
 		// A1 holds a weak reference
-		LOGGER.info(session.getRootNode().getNode("instanceA1").getProperty("bRef").getString());
-		assertEquals(session.getRootNode().getNode("instanceA1").getProperty("bRef").getType(), PropertyType.WEAKREFERENCE);
-		assertEquals(session.getRootNode().getNode("instanceA1").getProperty("bRef").getString(), instanceBID);
+		LOGGER.info(getRootNode().getNode("instanceA1").getProperty("bRef").getString());
+		assertEquals(getRootNode().getNode("instanceA1").getProperty("bRef").getType(), PropertyType.WEAKREFERENCE);
+		assertEquals(getRootNode().getNode("instanceA1").getProperty("bRef").getString(), instanceBID);
 
 		// A2 holds a reference
-		LOGGER.info(session.getRootNode().getNode("instanceA2").getProperty("bRef").getString());
-		assertEquals(session.getRootNode().getNode("instanceA2").getProperty("bRef").getType(), PropertyType.REFERENCE);
-		assertEquals(session.getRootNode().getNode("instanceA2").getProperty("bRef").getString(), instanceBID);
+		LOGGER.info(getRootNode().getNode("instanceA2").getProperty("bRef").getString());
+		assertEquals(getRootNode().getNode("instanceA2").getProperty("bRef").getType(), PropertyType.REFERENCE);
+		assertEquals(getRootNode().getNode("instanceA2").getProperty("bRef").getString(), instanceBID);
 
 		// A3 holds a reference
-		LOGGER.info(session.getRootNode().getNode("instanceA3").getProperty("bRef").getString());
-		assertEquals(session.getRootNode().getNode("instanceA3").getProperty("bRef").getType(), PropertyType.REFERENCE);
-		assertEquals(session.getRootNode().getNode("instanceA3").getProperty("bRef").getString(), instanceBID);
+		LOGGER.info(getRootNode().getNode("instanceA3").getProperty("bRef").getString());
+		assertEquals(getRootNode().getNode("instanceA3").getProperty("bRef").getType(), PropertyType.REFERENCE);
+		assertEquals(getRootNode().getNode("instanceA3").getProperty("bRef").getString(), instanceBID);
 	}
 
 	@Test
@@ -103,7 +115,6 @@ public class TestJcrReference extends TestAbstract {
 		LOGGER.info("assert referential integrity using weak reference");
 
 		// initialise jcrom
-		Jcrom jcrom = new Jcrom();
 		jcrom.map(A1.class);
 		jcrom.map(B.class);
 
@@ -116,14 +127,14 @@ public class TestJcrReference extends TestAbstract {
 		instanceA1.setName("instanceA1");
 		instanceA1.setbRef(instanceB);
 
-		jcrom.addNode(session.getRootNode(), instanceB, new String[] { "mix:referenceable" });
-		String instanceBID = session.getRootNode().getNode("instanceB").getIdentifier();
-		jcrom.addNode(session.getRootNode(), instanceA1);
-		session.getRootNode().getNode("instanceB").remove();
-		session.save();
+		jcrom.addNode(getRootNode(), instanceB, new String[] { "mix:referenceable" });
+		String instanceBID = getRootNode().getNode("instanceB").getIdentifier();
+		jcrom.addNode(getRootNode(), instanceA1);
+		getRootNode().getNode("instanceB").remove();
+		save();
 
-		assertEquals(session.getRootNode().getNode("instanceA1").getProperty("bRef").getType(), PropertyType.WEAKREFERENCE);
-		assertEquals(session.getRootNode().getNode("instanceA1").getProperty("bRef").getString(), instanceBID);
+		assertEquals(getRootNode().getNode("instanceA1").getProperty("bRef").getType(), PropertyType.WEAKREFERENCE);
+		assertEquals(getRootNode().getNode("instanceA1").getProperty("bRef").getString(), instanceBID);
 	}
 
 	@Test(expected = ReferentialIntegrityException.class)
@@ -131,7 +142,6 @@ public class TestJcrReference extends TestAbstract {
 		LOGGER.info("no referential integrity using default reference");
 
 		// initialise jcrom
-		Jcrom jcrom = new Jcrom();
 		jcrom.map(A3.class);
 		jcrom.map(B.class);
 
@@ -144,10 +154,10 @@ public class TestJcrReference extends TestAbstract {
 		instanceA3.setName("instanceA3");
 		instanceA3.setbRef(instanceB);
 
-		jcrom.addNode(session.getRootNode(), instanceB, new String[] { "mix:referenceable" });
-		jcrom.addNode(session.getRootNode(), instanceA3);
-		session.getRootNode().getNode("instanceB").remove();
-		session.save();
+		jcrom.addNode(getRootNode(), instanceB, new String[] { "mix:referenceable" });
+		jcrom.addNode(getRootNode(), instanceA3);
+		getRootNode().getNode("instanceB").remove();
+		save();
 	}
 
 	@Test
@@ -156,23 +166,22 @@ public class TestJcrReference extends TestAbstract {
 		container.name = "c";
 		container.map.put("a", null);
 
-		Jcrom jcrom = new Jcrom();
 		jcrom.map(Container.class);
 		jcrom.map(B.class);
-		jcrom.addNode(session.getRootNode(), container);
+		jcrom.addNode(getRootNode(), container);
 	}
 
 	@Test
 	public void testChildNodeMapFromNode() throws RepositoryException {
+		jcrom.map(Container2.class);
+		jcrom.map(B.class);
+
 		Container2 container = new Container2();
 		container.name = "c1";
 		B b = new B("b1");
 		container.map.put("a", b);
-		Jcrom jcrom = new Jcrom();
-		jcrom.map(Container2.class);
-		jcrom.map(B.class);
-		jcrom.addNode(session.getRootNode(), b);
-		Node node = jcrom.addNode(session.getRootNode(), container);
+		jcrom.addNode(getRootNode(), b);
+		Node node = jcrom.addNode(getRootNode(), container);
 		Container2 container1 = jcrom.fromNode(Container2.class, node);
 		assertTrue(container1.map.containsKey("a"));
 		// JCROM modifies the name of the child node to match the map key, not sure that this is excepted?
@@ -181,15 +190,15 @@ public class TestJcrReference extends TestAbstract {
 
 	@Test
 	public void testReferenceMapFromNode() throws RepositoryException {
+		jcrom.map(Container.class);
+		jcrom.map(B.class);
+		
 		Container container = new Container();
 		container.name = "c2";
 		B b = new B("b2");
 		container.map.put("a", b);
-		Jcrom jcrom = new Jcrom();
-		jcrom.map(Container.class);
-		jcrom.map(B.class);
-		jcrom.addNode(session.getRootNode(), b);
-		Node node = jcrom.addNode(session.getRootNode(), container);
+		jcrom.addNode(getRootNode(), b);
+		Node node = jcrom.addNode(getRootNode(), container);
 		Container container1 = jcrom.fromNode(Container.class, node);
 		assertTrue(container1.map.containsKey("a"));
 		assertEquals("b2", container1.map.get("a").name);

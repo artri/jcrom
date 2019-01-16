@@ -21,7 +21,6 @@ import javax.jcr.Session;
 
 import net.sf.cglib.proxy.LazyLoader;
 
-import org.jcrom.util.SessionFactoryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,48 +30,35 @@ import org.slf4j.LoggerFactory;
  * @author Nicolas Dos Santos
  */
 abstract class AbstractLazyLoader implements LazyLoader {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLazyLoader.class);
 
-    private final Session session;
     private final Mapper mapper;
 
-    public AbstractLazyLoader(Session session, Mapper mapper) {
-        this.session = session;
+    public AbstractLazyLoader(Mapper mapper) {
         this.mapper = mapper;
     }
-
-    private Session getSession() {
-    	LOGGER.trace("Getting the session");
-    	
-        Session sessionToUse = Jcrom.getCurrentSession() != null ? Jcrom.getCurrentSession() : session;
-        if (sessionToUse == null || !sessionToUse.isLive()) {
-        	LOGGER.debug("Creating a new session");
-            SessionFactory sessionFactory = mapper.getJcrom().getSessionFactory();
-            sessionToUse = SessionFactoryUtils.getSession(sessionFactory);
-        }
-        return sessionToUse;
-    }
-
-    private void releaseSession(Session session) {
-        if (session != null) {
-            Session sessionToUse = Jcrom.getCurrentSession() != null ? Jcrom.getCurrentSession() : this.session;
-            if (!sessionToUse.equals(session)) {
-                SessionFactoryUtils.releaseSession(session);
-                LOGGER.debug("Closing the newly created session");
-            }
-        }
-    }
+    
+//    public AbstractLazyLoader(Session session, Mapper mapper) {
+//        this.session = session;
+//        this.mapper = mapper;
+//    }
 
     @Override
     public final Object loadObject() throws Exception {
+    	LOGGER.trace("loadObject");
         // Retrieve the session. If the session is closed, create a new session
-        Session sessionToUse = getSession();
-        // Load object
-        Object obj = doLoadObject(sessionToUse, mapper);
-        // Close only the newly created session
-        releaseSession(sessionToUse);
-        return obj;
+    	Session session = null;
+    	try {
+            session = mapper.getJcrom().getSessionFactory().getSession();
+            // Load object
+            Object obj = doLoadObject(session, mapper);
+            return obj;
+    	} finally {
+    		if (null != session) {
+                // Close only the newly created session
+                mapper.getJcrom().getSessionFactory().releaseSession();    			
+    		}
+    	}
     }
 
     protected abstract Object doLoadObject(Session session, Mapper mapper) throws Exception;

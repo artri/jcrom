@@ -19,13 +19,19 @@ package org.jcrom.jackrabbit;
 
 import java.io.File;
 
+import javax.jcr.Node;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 
 import org.apache.jackrabbit.core.TransientRepository;
+import org.jcrom.Jcrom;
+import org.jcrom.SessionFactoryImpl;
 import org.junit.After;
 import org.junit.Before;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -33,32 +39,51 @@ import org.junit.Before;
  * @author Nicolas Dos Santos
  */
 public class TestAbstract {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestAbstract.class);
+	
     protected Repository repo;
-    protected Session session;
     protected String userID = "admin";
     protected char[] password = "admin".toCharArray();
 
+    protected Jcrom jcrom;
+    
     @Before
     public void setUpRepository() throws Exception {
+    	LOGGER.info("Setting up repository");
+    	
         deleteDir(new File("repository"));
         new File("repository.xml").delete();
         new File("derby.log").delete();
 
         repo = new TransientRepository();
-        session = repo.login(new SimpleCredentials(userID, password));
+        
+        jcrom = new Jcrom(true, true);
+        jcrom.setSessionFactory(new SessionFactoryImpl(repo, new SimpleCredentials(userID, password)));
     }
 
     @After
     public void tearDownRepository() throws Exception {
-        if (session != null) {
-            session.logout();
-        }
+    	LOGGER.info("Setting up repository");
+    	
+    	jcrom.getSessionFactory().releaseSession();
+    	
         deleteDir(new File("repository"));
         new File("repository.xml").delete();
         new File("derby.log").delete();
     }
 
+    protected Session getSession() {
+    	return jcrom.getSessionFactory().getSession();
+    }
+    
+    protected Node getRootNode() throws RepositoryException {
+    	return getSession().getRootNode();
+    }
+    
+    protected void save() throws RepositoryException {
+    	getSession().save();
+    }
+    
     public static boolean deleteDir(File dir) {
         if (dir.isDirectory()) {
             String[] children = dir.list();

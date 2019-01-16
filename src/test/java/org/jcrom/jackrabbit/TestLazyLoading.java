@@ -28,7 +28,6 @@ import javax.jcr.Node;
 import javax.jcr.SimpleCredentials;
 
 import org.jcrom.JcrFile;
-import org.jcrom.Jcrom;
 import org.jcrom.SessionFactory;
 import org.jcrom.SessionFactoryImpl;
 import org.jcrom.dao.TreeDAO;
@@ -45,11 +44,9 @@ import org.junit.Test;
  * @author Nicolas Dos Santos
  */
 public class TestLazyLoading extends TestAbstract {
-
+	
     @Test
     public void testLazyLoading() throws Exception {
-
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Tree.class).map(LazyObject.class);
 
         TreeNode homeNode = new TreeNode();
@@ -85,7 +82,7 @@ public class TestLazyLoading extends TestAbstract {
         tree.addLazyObject(lazyObject1);
         tree.addLazyObject(lazyObject2);
 
-        Node treeRootNode = jcrom.addNode(session.getRootNode(), tree);
+        Node treeRootNode = jcrom.addNode(getRootNode(), tree);
 
         Tree fromNode = jcrom.fromNode(Tree.class, treeRootNode);
         assertEquals(tree.getChildren().size(), fromNode.getChildren().size());
@@ -123,8 +120,6 @@ public class TestLazyLoading extends TestAbstract {
 
     @Test
     public void testDynamicMaps() throws Exception {
-
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(DynamicObject.class).map(TreeNode.class);
 
         TreeNode node1 = new TreeNode("node1");
@@ -153,7 +148,7 @@ public class TestLazyLoading extends TestAbstract {
         dynamicObj.putSingleFile(file2.getName(), file2);
         dynamicObj.putMultiFile("manyFiles", files);
 
-        Node newNode = jcrom.addNode(session.getRootNode(), dynamicObj);
+        Node newNode = jcrom.addNode(getRootNode(), dynamicObj);
 
         DynamicObject fromNode = jcrom.fromNode(DynamicObject.class, newNode);
 
@@ -185,8 +180,8 @@ public class TestLazyLoading extends TestAbstract {
         TreeNode ref1 = new TreeNode("ref1");
         TreeNode ref2 = new TreeNode("ref2");
 
-        jcrom.addNode(session.getRootNode(), ref1);
-        jcrom.addNode(session.getRootNode(), ref2);
+        jcrom.addNode(getRootNode(), ref1);
+        jcrom.addNode(getRootNode(), ref2);
 
         List<Object> multiRefs = new ArrayList<Object>();
         multiRefs.add(ref1);
@@ -198,7 +193,7 @@ public class TestLazyLoading extends TestAbstract {
 
         jcrom.updateNode(newNode, fromNode);
 
-        session.save();
+        save();
 
         DynamicObject updatedNode = jcrom.fromNode(DynamicObject.class, newNode);
 
@@ -223,7 +218,6 @@ public class TestLazyLoading extends TestAbstract {
 
         SessionFactory sessionFactory = new SessionFactoryImpl(repo, new SimpleCredentials(userID, password));
 
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Tree.class).map(LazyObject.class);
         jcrom.setSessionFactory(sessionFactory);
 
@@ -263,7 +257,7 @@ public class TestLazyLoading extends TestAbstract {
         tree.addLazyObject(lazyObject2);
 
         Tree createdTree = dao.create(tree);
-        //Node treeRootNode = jcrom.addNode(session.getRootNode(), tree);
+        //Node treeRootNode = jcrom.addNode(getRootNode(), tree);
 
         Tree loadedTree = dao.loadById(createdTree.getUuid());
         //Tree fromNode = jcrom.fromNode(Tree.class, treeRootNode);

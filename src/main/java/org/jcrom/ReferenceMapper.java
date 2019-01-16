@@ -227,7 +227,6 @@ class ReferenceMapper {
                 return PathUtils.getNode(value.getString(), session);
             }
         } else {
-            //return session.getNodeByUUID(value.getString());
             return PathUtils.getNodeById(value.getString(), session);
         }
         return null;
@@ -243,7 +242,6 @@ class ReferenceMapper {
                 referencedNode = PathUtils.getNode(value.getString(), session);
             }
         } else {
-            //referencedNode = session.getNodeByUUID(value.getString());
             referencedNode = PathUtils.getNodeById(value.getString(), session);
         }
 
@@ -308,7 +306,7 @@ class ReferenceMapper {
                     if (typeHandler.isList(mapParamClass)) {
                         if (jcrReference.lazy()) {
                         	// lazy loading
-                        	references.put(p.getName(), ProxyFactory.createReferenceListProxy(mapParamClass, obj, containerNode.getPath(), p.getName(), node.getSession(), mapper, depth, nodeFilter, field));
+                        	references.put(p.getName(), ProxyFactory.createReferenceListProxy(mapParamClass, obj, containerNode.getPath(), p.getName(), mapper, depth, nodeFilter, field));
                         } else {
                         	// eager loading
                             references.put(p.getName(), getReferenceList(field, p.getName(), mapParamClass, containerNode, obj, depth, nodeFilter, mapper));
@@ -317,7 +315,7 @@ class ReferenceMapper {
                         if (jcrReference.lazy()) {
                         	// lazy loading
                             Node referencedNode = getSingleReferencedNode(jcrReference, p.getValue(), node.getSession());
-                            references.put(p.getName(), ProxyFactory.createReferenceProxy(mapper.findClassFromNode(mapParamClass, referencedNode), obj, containerNode.getPath(), p.getName(), node.getSession(), mapper, depth, nodeFilter, field));
+                            references.put(p.getName(), ProxyFactory.createReferenceProxy(mapper.findClassFromNode(mapParamClass, referencedNode), obj, containerNode.getPath(), p.getName(), mapper, depth, nodeFilter, field));
                         } else {
                         	// eager loading
                         	references.put(p.getName(), createReferencedObject(field, p.getValue(), obj, containerNode.getSession(), mapParamClass, depth, nodeFilter, mapper));
@@ -340,7 +338,7 @@ class ReferenceMapper {
             List value = null;
             if (jcrReference.lazy()) {
                 // lazy loading
-                value = ProxyFactory.createReferenceListProxy(referenceObjClass, obj, node.getPath(), propertyName, node.getSession(), mapper, depth, nodeFilter, field);
+                value = ProxyFactory.createReferenceListProxy(referenceObjClass, obj, node.getPath(), propertyName, mapper, depth, nodeFilter, field);
             } else {
                 // eager loading
                 value = getReferenceList(field, propertyName, referenceObjClass, node, obj, depth, nodeFilter, mapper);
@@ -358,7 +356,7 @@ class ReferenceMapper {
                 Class<?> referenceObjClass = typeHandler.getType(field.getType(), field.getGenericType(), obj);
                 Object value = null;
                 if (jcrReference.lazy()) {
-                    value = ProxyFactory.createReferenceProxy(referenceObjClass, obj, node.getPath(), propertyName, node.getSession(), mapper, depth, nodeFilter, field);
+                    value = ProxyFactory.createReferenceProxy(referenceObjClass, obj, node.getPath(), propertyName, mapper, depth, nodeFilter, field);
                 } else {
                     value = createReferencedObject(field, node.getProperty(propertyName).getValue(), obj, node.getSession(), referenceObjClass, depth, nodeFilter, mapper);
                 }

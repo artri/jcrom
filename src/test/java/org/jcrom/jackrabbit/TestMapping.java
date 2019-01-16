@@ -111,7 +111,9 @@ import org.jcrom.util.JcrUtils;
 import org.jcrom.util.NodeFilter;
 import org.jcrom.util.PathUtils;
 import org.jcrom.util.io.IOUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -257,21 +259,30 @@ public class TestMapping extends TestAbstract {
         return jcrFile;
     }
 
+	@Before
+	public void setUpRepository() throws Exception {
+		super.setUpRepository();
+	}
+
+	@After
+	public void tearDownRepository() throws Exception {
+		super.tearDownRepository();
+	}
+	
     @Test
     public void testGetNodesMethod() throws Exception {
-        Node jcrRootNode = session.getRootNode();
+        Node jcrRootNode = getRootNode();
         Node rootNode = jcrRootNode.addNode("mapSuperclassTest");
         Node newNode = rootNode.addNode("newNode");
         NodeIterator nodeIterator = rootNode.getNodes("myMap"); // Gets all child nodes that match 'myMap'
         assertFalse(nodeIterator.hasNext()); // It's not correct ! there should be an empty iterator !
-        session.save();
+        save();
         nodeIterator = rootNode.getNodes("myMap");
         assertFalse(nodeIterator.hasNext()); // It's correct after saving
     }
 
     @Test
     public void testEnums() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(EnumEntity.class);
 
         EnumEntity.Suit[] suitArray = new EnumEntity.Suit[2];
@@ -284,9 +295,9 @@ public class TestMapping extends TestAbstract {
         enumEntity.setSuitAsArray(suitArray);
         enumEntity.addSuitToList(EnumEntity.Suit.SPADES);
 
-        Node rootNode = session.getRootNode().addNode("enumTest");
+        Node rootNode = getRootNode().addNode("enumTest");
         Node newNode = jcrom.addNode(rootNode, enumEntity);
-        session.save();
+        save();
 
         EnumEntity fromNode = jcrom.fromNode(EnumEntity.class, newNode);
 
@@ -299,14 +310,11 @@ public class TestMapping extends TestAbstract {
 
     @Test(expected = JcrMappingException.class)
     public void mapInvalidObject() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(InvalidEntity.class);
     }
 
     @Test
     public void serializedProperties() throws Exception {
-
-        Jcrom jcrom = new Jcrom();
         jcrom.map(EntityWithSerializedProperties.class);
 
         EntityWithSerializedProperties entity = new EntityWithSerializedProperties();
@@ -315,9 +323,9 @@ public class TestMapping extends TestAbstract {
         Parent parent = createParent("John");
         entity.setParent(parent);
 
-        Node rootNode = session.getRootNode().addNode("mapChildTest");
+        Node rootNode = getRootNode().addNode("mapChildTest");
         Node newNode = jcrom.addNode(rootNode, entity);
-        session.save();
+        save();
 
         EntityWithSerializedProperties entityFromJcr = jcrom.fromNode(EntityWithSerializedProperties.class, newNode);
 
@@ -328,8 +336,6 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void mapsAsChildren() throws Exception {
-
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(EntityWithMapChildren.class);
         jcrom.map(Child.class);
 
@@ -352,9 +358,9 @@ public class TestMapping extends TestAbstract {
 
         EntityWithMapChildren entity = createEntityWithMapChildren(myIntArr1, myIntArr2, myIntArr3, myInt1, myInt2, myStringArr1, myStringArr2, myStringArr3, myString1, myString2, locale, locales);
 
-        Node rootNode = session.getRootNode().addNode("mapChildTest");
+        Node rootNode = getRootNode().addNode("mapChildTest");
         Node newNode = jcrom.addNode(rootNode, entity);
-        session.save();
+        save();
 
         EntityWithMapChildren entityFromJcr = jcrom.fromNode(EntityWithMapChildren.class, newNode);
 
@@ -388,11 +394,10 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void testPersistMapWithDAO() throws Exception {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(EntityWithMapChildren.class);
         jcrom.map(Child.class);
 
-        EntityWithMapChildrenDAO dao = new EntityWithMapChildrenDAO(session, jcrom, new String[] { NodeType.MIX_VERSIONABLE });
+        EntityWithMapChildrenDAO dao = new EntityWithMapChildrenDAO(jcrom, new String[] { NodeType.MIX_VERSIONABLE });
 
         Integer[] myIntArr1 = { 1, 2, 3 };
         Integer[] myIntArr2 = { 4, 5, 6 };
@@ -557,8 +562,6 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void mapsInSuperclass() throws Exception {
-
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(EntityParent.class);
         jcrom.map(EntityChild.class);
 
@@ -577,15 +580,15 @@ public class TestMapping extends TestAbstract {
         entity.setMyMap(myMap);
         entity.setPerson(person);
 
-        Node jcrRootNode = session.getRootNode();
+        Node jcrRootNode = getRootNode();
         Node rootNode = jcrRootNode.addNode("mapSuperclassTest");
         Node newNode = jcrom.addNode(rootNode, entity);
 
-        session.save();
+        save();
 
         // Export to check created nodes
         OutputStream out = new FileOutputStream(new File("target/jcr-export.xml"));
-        session.exportSystemView(jcrRootNode.getPath(), out, false, false);
+        getSession().exportSystemView(jcrRootNode.getPath(), out, false, false);
 
         EntityChild entityFromJcr = jcrom.fromNode(EntityChild.class, newNode);
         assertNotNull(entityFromJcr);
@@ -598,8 +601,6 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void dynamicInstantiation() throws Exception {
-
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Circle.class).map(Rectangle.class).map(ShapeParent.class).map(Square.class);
 
         Shape circle = new Circle(5);
@@ -608,10 +609,10 @@ public class TestMapping extends TestAbstract {
         Shape rectangle = new Rectangle(5, 5);
         rectangle.setName("rectangle");
 
-        Node rootNode = session.getRootNode().addNode("dynamicInstTest");
+        Node rootNode = getRootNode().addNode("dynamicInstTest");
         Node circleNode = jcrom.addNode(rootNode, circle);
         Node rectangleNode = jcrom.addNode(rootNode, rectangle);
-        session.save();
+        save();
 
         Shape circleFromNode = jcrom.fromNode(Shape.class, circleNode);
         Shape rectangleFromNode = jcrom.fromNode(Shape.class, rectangleNode);
@@ -639,7 +640,7 @@ public class TestMapping extends TestAbstract {
         shapeParent.setMainShape(circle2);
 
         Node shapeParentNode = jcrom.addNode(rootNode, shapeParent);
-        session.save();
+        save();
 
         ShapeParent fromNode = jcrom.fromNode(ShapeParent.class, shapeParentNode);
 
@@ -652,8 +653,6 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void references() throws Exception {
-
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(ReferenceContainer.class);
         jcrom.map(Rectangle.class);
 
@@ -669,11 +668,11 @@ public class TestMapping extends TestAbstract {
         Rectangle rectangle = new Rectangle(2, 3);
         rectangle.setName("rectangle");
 
-        Node rootNode = session.getRootNode().addNode("referenceTest");
+        Node rootNode = getRootNode().addNode("referenceTest");
         jcrom.addNode(rootNode, reference);
         jcrom.addNode(rootNode, reference2);
         jcrom.addNode(rootNode, rectangle);
-        session.save();
+        save();
 
         // note that the ReferenceContainer and ReferencedEntity classes both have
         // mixin types defined in their @JcrNode annotation
@@ -716,13 +715,11 @@ public class TestMapping extends TestAbstract {
     @Test
     @Ignore
     public void versioningDAO() throws Exception {
-
-        Jcrom jcrom = new Jcrom();
         jcrom.map(VersionedEntity.class);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        Node rootNode = getRootNode().addNode("content").addNode("versionedEntities");
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -838,12 +835,11 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void versioningDAOChild1() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(VersionedEntity.class);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        Node rootNode = getRootNode().addNode("content").addNode("versionedEntities");
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setName("MyEntity");
@@ -868,12 +864,11 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void versioningDAOChild2() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(VersionedEntity.class);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        Node rootNode = getRootNode().addNode("content").addNode("versionedEntities");
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -896,12 +891,11 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void versioningDAOChild3() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(VersionedEntity.class);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        Node rootNode = getRootNode().addNode("content").addNode("versionedEntities");
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -924,12 +918,11 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void versioningDAOChild4() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(VersionedEntity.class);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        Node rootNode = getRootNode().addNode("content").addNode("versionedEntities");
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -947,12 +940,11 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void versioningDAOChild5() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(VersionedEntity.class);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        Node rootNode = getRootNode().addNode("content").addNode("versionedEntities");
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -974,12 +966,11 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void versioningDAOChild6() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(VersionedEntity.class);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        Node rootNode = getRootNode().addNode("content").addNode("versionedEntities");
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -999,13 +990,11 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void testDAOs() throws Exception {
-
-        Jcrom jcrom = new Jcrom();
         jcrom.map(Parent.class);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("parents");
-        ParentDAO parentDao = new ParentDAO(session, jcrom);
+        Node rootNode = getRootNode().addNode("content").addNode("parents");
+        ParentDAO parentDao = new ParentDAO(jcrom);
 
         Parent dad = createParent("John Bobs");
         dad.setDrivingLicense(false);
@@ -1022,7 +1011,7 @@ public class TestMapping extends TestAbstract {
         parentDao.create(dad);
         parentDao.create(mom);
 
-        session.save();
+        save();
 
         assertTrue(parentDao.exists(dad.getPath()));
 
@@ -1070,24 +1059,23 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void testDAOCreateNode() throws Exception {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Parent.class);
         jcrom.map(Parent2.class);
         jcrom.map(Parent3.class);
         jcrom.map(Parent4.class);
         jcrom.map(Child4.class);
 
-        ParentDAO parentDao = new ParentDAO(session, jcrom);
-        ParentDAO2 parentDao2 = new ParentDAO2(session, jcrom);
-        ParentDAO3 parentDao3 = new ParentDAO3(session, jcrom);
-        ParentDAO4 parentDao4 = new ParentDAO4(session, jcrom);
-        ChildDAO childDao = new ChildDAO(session, jcrom);
-        ChildDAO2 childDao2 = new ChildDAO2(session, jcrom);
-        ChildDAO3 childDao3 = new ChildDAO3(session, jcrom);
-        ChildDAO4 childDao4 = new ChildDAO4(session, jcrom);
+        ParentDAO parentDao = new ParentDAO(jcrom);
+        ParentDAO2 parentDao2 = new ParentDAO2(jcrom);
+        ParentDAO3 parentDao3 = new ParentDAO3(jcrom);
+        ParentDAO4 parentDao4 = new ParentDAO4(jcrom);
+        ChildDAO childDao = new ChildDAO(jcrom);
+        ChildDAO2 childDao2 = new ChildDAO2(jcrom);
+        ChildDAO3 childDao3 = new ChildDAO3(jcrom);
+        ChildDAO4 childDao4 = new ChildDAO4(jcrom);
 
         // create the root
-        Node rootNode = session.getRootNode().addNode("content").addNode("parents");
+        Node rootNode = getRootNode().addNode("content").addNode("parents");
 
         Parent2 p2 = createParent2("John Bobs 2"); // Single child
         assertFalse(parentDao.exists(rootNode.getPath() + "/" + p2.getName()));
@@ -1100,7 +1088,7 @@ public class TestMapping extends TestAbstract {
         parentDao3.create(p3);
         parentDao4.create(p4);
 
-        session.save();
+        save();
 
         assertTrue(parentDao2.exists(p2.getPath()));
         assertTrue(parentDao3.exists(p3.getPath()));
@@ -1155,7 +1143,7 @@ public class TestMapping extends TestAbstract {
         parentDao.create(dad);
         parentDao.create(mom);
 
-        session.save();
+        save();
 
         assertTrue(parentDao.exists(dad.getPath()));
         assertTrue(parentDao.exists(mom.getPath()));
@@ -1174,24 +1162,24 @@ public class TestMapping extends TestAbstract {
     @Test
     public void versioning() throws Exception {
 
-    Node node = session.getRootNode().addNode("versionTest");
+    Node node = getRootNode().addNode("versionTest");
     node.addMixin("mix:versionable");
     node.setProperty("title", "version 1");
-    session.save();
+    save();
     node.checkin();
 
     node.checkout();
     node.setProperty("title", "version 2");
-    session.save();
+    save();
     node.checkin();
 
     node.checkout();
     node.setProperty("title", "version 3");
-    session.save();
+    save();
     node.checkin();
 
     // print version history
-    VersionHistory history = session.getRootNode().getNode("versionTest").getVersionHistory();
+    VersionHistory history = getRootNode().getNode("versionTest").getVersionHistory();
     VersionIterator iterator = history.getAllVersions();
     iterator.skip(1);
     while ( iterator.hasNext() ) {
@@ -1211,13 +1199,13 @@ public class TestMapping extends TestAbstract {
     }
 
     // print base version
-    LOGGER.info("Base version name: " + session.getRootNode().getNode("versionTest").getBaseVersion().getName());
+    LOGGER.info("Base version name: " + getRootNode().getNode("versionTest").getBaseVersion().getName());
 
     // restore
     node.checkout();
     node.restore("1.0", true);
 
-    LOGGER.info("Base version name (after restore): " + session.getRootNode().getNode("versionTest").getBaseVersion().getName());
+    LOGGER.info("Base version name (after restore): " + getRootNode().getNode("versionTest").getBaseVersion().getName());
     }
      */
     /**
@@ -1226,9 +1214,8 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void testMultiValuedProperties() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(Parent.class);
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         Parent parent = createParent("John Mugabe");
 
@@ -1298,10 +1285,9 @@ public class TestMapping extends TestAbstract {
         }
 
         // map to node
-        Jcrom jcrom = new Jcrom();
         jcrom.map(Parent.class); // this should automatically map the other classes, since they are referenced
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         // map the object to node
         String[] mixinTypes = { "mix:referenceable" };
@@ -1458,10 +1444,9 @@ public class TestMapping extends TestAbstract {
         }
 
         // map to node
-        Jcrom jcrom = new Jcrom();
         jcrom.map(Parent.class); // this should automatically map the other classes, since they are referenced
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         // map the object to node
         String[] mixinTypes = { "mix:referenceable" };
@@ -1737,7 +1722,6 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void testEmptyList() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(Person.class);
 
         // create person
@@ -1747,7 +1731,7 @@ public class TestMapping extends TestAbstract {
         person.setPhones(Arrays.asList(new String[] { "053453553" }));
 
         // add person in jcr
-        Node node = jcrom.addNode(session.getRootNode(), person);
+        Node node = jcrom.addNode(getRootNode(), person);
         Person personFromJcr = jcrom.fromNode(Person.class, node);
         assertEquals(1, personFromJcr.getPhones().size());
 
@@ -1762,10 +1746,9 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void testJcrFileMapping() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(JcrFile.class);
 
-        Node root = session.getRootNode().addNode("files");
+        Node root = getRootNode().addNode("files");
 
         JcrFile file = createFile("myfile", true);
         Calendar lastModified = file.getLastModified();
@@ -1790,11 +1773,10 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void testCustomJcrFile() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(CustomJCRFile.class);
 
-        session.getRootNode().addNode("customs");
-        CustomJCRFileDAO dao = new CustomJCRFileDAO(session, jcrom);
+        getRootNode().addNode("customs");
+        CustomJCRFileDAO dao = new CustomJCRFileDAO(jcrom);
 
         File imageFile = new File("src/test/resources/ogg.jpg");
 
@@ -1840,12 +1822,11 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void testJcrFileNodeFromInputStream() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(Document.class);
         jcrom.map(Parent.class);
         jcrom.map(JcrFile.class);
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         Parent parent = createParent("Bob");
         parent.setJcrFile(createFile("jcr_image.jpg", true));
@@ -1866,10 +1847,9 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void testNoChildContainerNode() throws Exception {
-        Jcrom jcrom = new Jcrom();
         jcrom.map(UserProfile.class);
 
-        Node rootNode = session.getRootNode().addNode("noChildTest");
+        Node rootNode = getRootNode().addNode("noChildTest");
 
         UserProfile userProfile = new UserProfile();
         userProfile.setName("john");
@@ -1899,8 +1879,6 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void testSecondLevelFileUpdate() throws Exception {
-
-        Jcrom jcrom = new Jcrom();
         jcrom.map(GrandParent.class).map(Photo.class);
 
         GrandParent grandParent = new GrandParent();
@@ -1915,7 +1893,7 @@ public class TestMapping extends TestAbstract {
 
         grandParent.setChild(parent);
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         Node newNode = jcrom.addNode(rootNode, grandParent);
 
@@ -1937,7 +1915,6 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void testReferenceCycles() throws Exception {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(BadNode.class);
 
         BadNode node1 = new BadNode();
@@ -1946,7 +1923,7 @@ public class TestMapping extends TestAbstract {
         BadNode node2 = new BadNode();
         node2.body = "body2";
 
-        Node rootNode = session.getRootNode();
+        Node rootNode = getRootNode();
         Node n1 = jcrom.addNode(rootNode, node1);
         Node n2 = jcrom.addNode(rootNode, node2);
 
@@ -1965,7 +1942,6 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void testNestedInterfaces() throws Exception {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(AImpl.class).map(BImpl.class).map(CImpl.class);
 
         A a = new AImpl("a");
@@ -1976,7 +1952,7 @@ public class TestMapping extends TestAbstract {
         b.setC(c);
         a.setB(b);
 
-        Node rootNode = session.getRootNode();
+        Node rootNode = getRootNode();
         Node nodeA = jcrom.addNode(rootNode, a);
 
         A fromNodeA = jcrom.fromNode(A.class, nodeA);
@@ -1991,7 +1967,6 @@ public class TestMapping extends TestAbstract {
     @Test
     public final void testUpdateNodeNodeObject() throws Exception {
         // initialize JCrom
-        final Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Shape.class).map(Triangle.class).map(ShapeParent.class);
 
         // setup test data
@@ -2008,9 +1983,9 @@ public class TestMapping extends TestAbstract {
         shapeParent.addShape(childShape);
 
         // create node and children
-        final Node rootNode = this.session.getRootNode();
+        final Node rootNode = this.getRootNode();
         jcrom.addNode(rootNode, shapeParent);
-        this.session.save();
+        this.save();
 
         // get parent object from created node
         Node node = rootNode.getNode("shapeParent");
@@ -2031,7 +2006,7 @@ public class TestMapping extends TestAbstract {
 
         // and update
         jcrom.updateNode(node, shapeParent);
-        this.session.save();
+        this.save();
 
         // now reread the node and check the children
         node = rootNode.getNode("shapeParent");
@@ -2056,12 +2031,11 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public final void testAddCustomJCRFileParentNode() throws Exception {
-        final Jcrom jcrom = new Jcrom();
         jcrom.map(CustomJCRFile.class);
         jcrom.map(CustomJCRFileParentNode.class);
 
         // create root node
-        final Node customs = this.session.getRootNode().addNode("customs");
+        final Node customs = this.getRootNode().addNode("customs");
 
         // initialize the file
         final CustomJCRFile custom = new CustomJCRFile();
@@ -2096,12 +2070,11 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public final void testAddCustomJCRFile() throws Exception {
-        final Jcrom jcrom = new Jcrom();
         jcrom.map(CustomJCRFile.class);
         jcrom.map(CustomJCRFileParentNode.class);
 
         // create root node
-        final Node customs = this.session.getRootNode().addNode("customs");
+        final Node customs = this.getRootNode().addNode("customs");
 
         // initialize the file
         final CustomJCRFile custom = new CustomJCRFile();
@@ -2127,16 +2100,15 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void testProtectedProperties() throws Exception {
-        final Jcrom jcrom = new Jcrom();
         jcrom.map(ProtectedPropertyNode.class);
 
         ProtectedPropertyNode protectedNode = new ProtectedPropertyNode();
         protectedNode.setName("protected_node");
         protectedNode.setCreatedBy("John Doe");
 
-        final Node rootNode = this.session.getRootNode();
+        final Node rootNode = this.getRootNode();
         Node createdProtectedNode = jcrom.addNode(rootNode, protectedNode);
-        this.session.save();
+        this.save();
 
         JcrUtils.lock(createdProtectedNode, true, false, -1, "the_locker");
 
@@ -2186,7 +2158,6 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void testAddMapToModel() throws Exception {
-        final Jcrom jcrom = new Jcrom();
         jcrom.map(EntityToBeModified.class);
         jcrom.map(EntityModifiedMapFieldAdded.class);
 
@@ -2194,7 +2165,7 @@ public class TestMapping extends TestAbstract {
         entity.setName("original");
         entity.setPath("original");
 
-        Node originalNode = jcrom.addNode(this.session.getRootNode(), entity);
+        Node originalNode = jcrom.addNode(this.getRootNode(), entity);
 
         try {
             jcrom.fromNode(EntityModifiedMapFieldAdded.class, originalNode);
@@ -2209,13 +2180,12 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void finalFields() throws Exception {
-        final Jcrom jcrom = new Jcrom();
         jcrom.map(FinalEntity.class);
 
         FinalEntity entity = new FinalEntity("This cannot be changed");
         entity.setName("myentity");
 
-        final Node parentNode = this.session.getRootNode().addNode("mynode");
+        final Node parentNode = this.getRootNode().addNode("mynode");
 
         jcrom.addNode(parentNode, entity);
 
@@ -2225,10 +2195,9 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void mapPackage() throws Exception {
-        final Jcrom jcrom = new Jcrom(true, true);
         jcrom.mapPackage("org.jcrom.entities");
 
-        final Node parentNode = this.session.getRootNode().addNode("mynode");
+        final Node parentNode = this.getRootNode().addNode("mynode");
 
         First first = new First();
         first.setName("first");
@@ -2247,10 +2216,9 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void parentInterface() throws Exception {
-        final Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Square.class).map(WithParentInterface.class).map(Parent.class).map(Child.class);
 
-        final Node parentNode = this.session.getRootNode().addNode("mynode");
+        final Node parentNode = this.getRootNode().addNode("mynode");
 
         WithParentInterface child = new WithParentInterface();
         child.setName("child");
@@ -2284,10 +2252,9 @@ public class TestMapping extends TestAbstract {
 
     @Test
     public void customChildContainers() throws Exception {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Parent.class);
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         Parent parent = createParent("Daddy");
 
@@ -2313,10 +2280,9 @@ public class TestMapping extends TestAbstract {
 
     @Test(expected = PathNotFoundException.class)
     public void testNodeClassChange() throws Exception {
-        Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Rectangle.class).map(Triangle.class);
 
-        Node rootNode = session.getRootNode().addNode("root");
+        Node rootNode = getRootNode().addNode("root");
 
         // create the node
         Triangle triangle = new Triangle(1, 1);
@@ -2338,7 +2304,6 @@ public class TestMapping extends TestAbstract {
      */
     @Test
     public void testBigDecimalSerialization() {
-        Jcrom jcrom = new Jcrom(false, true);
         jcrom.map(EntityWithBigDecimalSerialization.class);
     }
 }

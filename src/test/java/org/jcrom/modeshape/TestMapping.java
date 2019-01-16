@@ -390,7 +390,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
         jcrom.map(EntityWithMapChildren.class);
         jcrom.map(Child.class);
 
-        EntityWithMapChildrenDAO dao = new EntityWithMapChildrenDAO(session, jcrom, new String[] { NodeType.MIX_VERSIONABLE });
+        EntityWithMapChildrenDAO dao = new EntityWithMapChildrenDAO(jcrom, new String[] { NodeType.MIX_VERSIONABLE });
 
         Integer[] myIntArr1 = { 1, 2, 3 };
         Integer[] myIntArr2 = { 4, 5, 6 };
@@ -720,7 +720,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -841,7 +841,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setName("MyEntity");
@@ -871,7 +871,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -899,7 +899,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -927,7 +927,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -950,7 +950,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -977,7 +977,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("versionedEntities");
-        VersionedDAO versionedDao = new VersionedDAO(session, jcrom);
+        VersionedDAO versionedDao = new VersionedDAO(jcrom);
 
         VersionedEntity entity = new VersionedEntity();
         entity.setTitle("MyEntity");
@@ -1003,7 +1003,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("parents");
-        ParentDAO parentDao = new ParentDAO(session, jcrom);
+        ParentDAO parentDao = new ParentDAO(jcrom);
 
         Parent dad = createParent("John Bobs");
         dad.setDrivingLicense(false);
@@ -1075,14 +1075,14 @@ public class TestMapping extends ModeShapeSingleUseTest {
         jcrom.map(Parent4.class);
         jcrom.map(Child4.class);
 
-        ParentDAO parentDao = new ParentDAO(session, jcrom);
-        ParentDAO2 parentDao2 = new ParentDAO2(session, jcrom);
-        ParentDAO3 parentDao3 = new ParentDAO3(session, jcrom);
-        ParentDAO4 parentDao4 = new ParentDAO4(session, jcrom);
-        ChildDAO childDao = new ChildDAO(session, jcrom);
-        ChildDAO2 childDao2 = new ChildDAO2(session, jcrom);
-        ChildDAO3 childDao3 = new ChildDAO3(session, jcrom);
-        ChildDAO4 childDao4 = new ChildDAO4(session, jcrom);
+        ParentDAO parentDao = new ParentDAO(jcrom);
+        ParentDAO2 parentDao2 = new ParentDAO2(jcrom);
+        ParentDAO3 parentDao3 = new ParentDAO3(jcrom);
+        ParentDAO4 parentDao4 = new ParentDAO4(jcrom);
+        ChildDAO childDao = new ChildDAO(jcrom);
+        ChildDAO2 childDao2 = new ChildDAO2(jcrom);
+        ChildDAO3 childDao3 = new ChildDAO3(jcrom);
+        ChildDAO4 childDao4 = new ChildDAO4(jcrom);
 
         // create the root
         Node rootNode = ((Session) session).getRootNode().addNode("content").addNode("parents");
@@ -1152,7 +1152,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         parentDao.create(dad);
         parentDao.create(mom);
-
+        
         session.save();
 
         assertTrue(parentDao.exists(dad.getPath()));
@@ -1792,7 +1792,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
         jcrom.map(CustomJCRFile.class);
 
         ((Session) session).getRootNode().addNode("customs");
-        CustomJCRFileDAO dao = new CustomJCRFileDAO(session, jcrom);
+        CustomJCRFileDAO dao = new CustomJCRFileDAO(jcrom);
 
         File imageFile = new File("src/test/resources/ogg.jpg");
 
