@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,8 +23,6 @@ import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.jcrom.annotations.JcrBaseVersionCreated;
 import org.jcrom.annotations.JcrBaseVersionName;
@@ -40,13 +38,14 @@ import org.jcrom.annotations.JcrProperty;
 import org.jcrom.annotations.JcrProtectedProperty;
 import org.jcrom.annotations.JcrReference;
 import org.jcrom.annotations.JcrSerializedProperty;
-import org.jcrom.annotations.JcrUUID;
 import org.jcrom.annotations.JcrVersionCreated;
 import org.jcrom.annotations.JcrVersionName;
 import org.jcrom.converter.Converter;
 import org.jcrom.converter.DefaultConverter;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is used by Jcrom to validate that the classes being mapped are correctly annotated as valid JCR classes.
@@ -56,7 +55,7 @@ import org.jcrom.util.ReflectionUtils;
  */
 class Validator {
 
-    private static final Logger logger = Logger.getLogger(Validator.class.getName());
+	private static final Logger LOGGER = LoggerFactory.getLogger(Validator.class);
 
     private final TypeHandler typeHandler;
 
@@ -84,9 +83,7 @@ class Validator {
 
     private void validateInternal(Class<?> c, Set<Class<?>> validClasses, boolean dynamicInstantiation) {
         if (!validClasses.contains(c)) {
-            if (logger.isLoggable(Level.FINE)) {
-                logger.finer("Processing class: " + c.getName());
-            }
+        	LOGGER.debug("Processing class: {}", c.getName());
 
             validClasses.add(c);
 
@@ -102,9 +99,7 @@ class Validator {
         boolean foundPathField = false;
         for (Field field : fields) {
             field.setAccessible(true);
-            if (logger.isLoggable(Level.FINE)) {
-                logger.finer("In [" + c.getName() + "]: Processing field: " + field.getName());
-            }
+            LOGGER.debug("In [{}]: Processing field: {}", c.getName(), field.getName());
 
             Type genericType = field.getGenericType();
             Class<?> type = typeHandler.getType(field.getType(), genericType, null);
@@ -154,11 +149,6 @@ class Validator {
                     throw new JcrMappingException("In [" + c.getName() + "]: Field [" + field.getName() + "] which is annotated as @JcrName must be of type java.lang.String, but is of type: " + type.getName());
                 }
                 foundNameField = true;
-            } else if (field.isAnnotationPresent(JcrUUID.class)) {
-                // make sure this is a String field
-                if (type != String.class) {
-                    throw new JcrMappingException("In [" + c.getName() + "]: Field [" + field.getName() + "] which is annotated as @JcrUUID must be of type java.lang.String, but is of type: " + type.getName());
-                }
             } else if (field.isAnnotationPresent(JcrIdentifier.class)) {
                 // make sure this is a String field
                 if (type != String.class) {
@@ -305,9 +295,6 @@ class Validator {
                         boolean foundUUID = false;
                         boolean foundId = false;
                         for (Field refField : ReflectionUtils.getDeclaredAndInheritedFields(fieldType, true)) {
-                            if (refField.isAnnotationPresent(JcrUUID.class)) {
-                                foundUUID = true;
-                            }
                             if (refField.isAnnotationPresent(JcrIdentifier.class)) {
                                 foundId = true;
                             }

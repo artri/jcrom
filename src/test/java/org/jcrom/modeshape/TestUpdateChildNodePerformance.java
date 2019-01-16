@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,8 @@ import org.jcrom.entities.Child;
 import org.jcrom.entities.Parent;
 import org.junit.Test;
 import org.modeshape.test.ModeShapeSingleUseTest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Thanks to Antoine Mischler for identifying this problem and contributing this test case.
@@ -31,7 +33,7 @@ import org.modeshape.test.ModeShapeSingleUseTest;
  * @author Nicolas Dos Santos
  */
 public class TestUpdateChildNodePerformance extends ModeShapeSingleUseTest {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestUpdateChildNodePerformance.class);
     @Test
     public void testPerformance() {
         Jcrom jcrom = new Jcrom(false, true);
@@ -51,11 +53,11 @@ public class TestUpdateChildNodePerformance extends ModeShapeSingleUseTest {
         parentDAO.update(parent);
         long firstUpdate = System.currentTimeMillis();
         long firstUpdateTime = firstUpdate - startTime;
-        System.out.println("First update took: " + firstUpdateTime + " ms");
+        LOGGER.info("First update took: " + firstUpdateTime + " ms");
         assertTrue(firstUpdateTime < 10000);
         parentDAO.update(parent);
         long secondUpdateTime = System.currentTimeMillis() - firstUpdate;
-        System.out.println("Second update took: " + secondUpdateTime + " ms");
+        LOGGER.info("Second update took: " + secondUpdateTime + " ms");
         assertTrue(secondUpdateTime < 8000);
     }
 

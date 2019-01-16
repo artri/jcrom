@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,15 +17,14 @@
  */
 package org.jcrom;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.util.NodeFilter;
 import org.jcrom.util.PathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handles lazy loading of file node lists.
@@ -35,7 +34,7 @@ import org.jcrom.util.PathUtils;
  */
 class FileNodeListLoader extends AbstractLazyLoader {
 
-    private static final Logger logger = Logger.getLogger(FileNodeListLoader.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileNodeListLoader.class);
 
     private final Class<?> objectClass;
     private final String fileContainerPath;
@@ -56,9 +55,8 @@ class FileNodeListLoader extends AbstractLazyLoader {
 
     @Override
     protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Lazy loading file list for " + fileContainerPath);
-        }
+    	LOGGER.debug("Lazy loading file list for: {} ", fileContainerPath);
+    	
         Node fileContainer = PathUtils.getNode(fileContainerPath, session);
         return mapper.getFileNodeMapper().getFileList(objectClass, fileContainer, parentObject, jcrFileNode, depth, nodeFilter, mapper);
     }

@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,6 +47,8 @@ import javax.jcr.ValueFactory;
 
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of {@link TypeHandler} to handle JavaFX types.
@@ -54,7 +56,8 @@ import org.jcrom.util.ReflectionUtils;
  * @author Nicolas Dos Santos
  */
 public class JavaFXTypeHandler extends DefaultTypeHandler {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(JavaFXTypeHandler.class);
+	
     @Override
     public Object resolveAddEntity(Object entity) {
         if (Property.class.isAssignableFrom(entity.getClass())) {
@@ -315,14 +318,14 @@ public class JavaFXTypeHandler extends DefaultTypeHandler {
                     try {
                         setter.invoke(obj, value);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                    	LOGGER.error(e.getMessage(), e);
                     }
                 }
             });
         } catch (InvocationTargetException e) {
-            e.printStackTrace();
+        	LOGGER.error(e.getMessage(), e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        	LOGGER.error(e.getMessage(), e);
         }
     }
 
@@ -335,7 +338,7 @@ public class JavaFXTypeHandler extends DefaultTypeHandler {
      */
     private static void updateProperty(final Object value, final Property finalProperty) {
         if (finalProperty.isBound()) {
-            System.out.println("Impossible to set the value " + value + " to " + finalProperty.getName() + ". Property is bound.");
+        	LOGGER.warn("Impossible to set the value {} to {}. Property is bound.", value, finalProperty.getName());
             return;
         }
 
@@ -372,9 +375,9 @@ public class JavaFXTypeHandler extends DefaultTypeHandler {
                     property = getPropertyByPropertyGetter(field, obj);
                     updateProperty(value, property);
                 } catch (NoSuchMethodException e1) {
-                    e1.printStackTrace();
+                	LOGGER.error(e1.getMessage(), e1);
                 } catch (InvocationTargetException e1) {
-                    e1.printStackTrace();
+                	LOGGER.error(e1.getMessage(), e1);
                 }
             }
         }

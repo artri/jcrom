@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,13 +39,16 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.jcr.CndImporter;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.test.ModeShapeSingleUseTest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
  * @author Nicolas Dos Santos
  */
 public class TestAdobeCQ extends ModeShapeSingleUseTest {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestAdobeCQ.class);
+	
     @Override
     public void beforeEach() throws Exception {
         super.beforeEach();
@@ -69,10 +72,10 @@ public class TestAdobeCQ extends ModeShapeSingleUseTest {
             NodeTypeManager nodeTypeManager = ((Session) session).getWorkspace().getNodeTypeManager();
             nodeTypeManager.registerNodeTypes(ntds.toArray(new NodeTypeDefinition[] {}), true);
             for (NodeTypeDefinition ntd : ntds) {
-                System.out.println("Registered: " + ntd.getName());
+                LOGGER.info("Registered: " + ntd.getName());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+        	LOGGER.error(e.getMessage(), e);
             fail(e.getMessage());
         }
     }

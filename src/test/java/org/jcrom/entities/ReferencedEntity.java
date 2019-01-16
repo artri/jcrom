@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,11 @@
  */
 package org.jcrom.entities;
 
+import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrName;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.annotations.JcrPath;
 import org.jcrom.annotations.JcrProperty;
-import org.jcrom.annotations.JcrUUID;
 
 /**
  *
@@ -35,7 +35,7 @@ public class ReferencedEntity {
     private String name;
     @JcrPath
     private String path;
-    @JcrUUID
+    @JcrIdentifier
     private String uuid;
 
     @JcrProperty

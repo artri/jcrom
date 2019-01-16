@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,6 @@
 package org.jcrom.jackrabbit;
 
 import java.io.File;
-import java.net.URL;
-import java.util.logging.LogManager;
 
 import javax.jcr.Repository;
 import javax.jcr.Session;
@@ -49,13 +47,6 @@ public class TestAbstract {
 
         repo = new TransientRepository();
         session = repo.login(new SimpleCredentials(userID, password));
-
-        ClassLoader loader = getClass().getClassLoader();
-        URL url = loader.getResource("logger.properties");
-        if (url == null) {
-            url = loader.getResource("/logger.properties");
-        }
-        LogManager.getLogManager().readConfiguration(url.openStream());
     }
 
     @After

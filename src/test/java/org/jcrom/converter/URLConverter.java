@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,13 +20,16 @@ package org.jcrom.converter;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * 
  * @author Nicolas Dos Santos
  */
 public class URLConverter implements Converter<URL, String> {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(URLConverter.class);
     /**
      * Convert URL object to a string representation of this URL
      */
@@ -43,7 +46,7 @@ public class URLConverter implements Converter<URL, String> {
         try {
             return new URL(urlString);
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOGGER.error(e.getMessage(), e);
         }
         return null;
     }

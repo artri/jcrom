@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +25,6 @@ import javax.jcr.nodetype.NodeType;
 import org.jcrom.annotations.JcrChildNode;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrNode;
-import org.jcrom.annotations.JcrUUID;
 
 /**
  * Models a folder.
@@ -40,8 +39,6 @@ public class Folder extends HierarchyNode {
 
     @JcrIdentifier
     private String id;
-    @JcrUUID
-    private String uuid;
 
     @JcrChildNode(containerNodeType = "nt:unstructured")
     private List<HierarchyNode> children = new ArrayList<HierarchyNode>();
@@ -62,24 +59,6 @@ public class Folder extends HierarchyNode {
      */
     public void setId(String id) {
         this.id = id;
-    }
-
-    /**
-     * TODO Insert getter method comment here.
-     * 
-     * @return the uuid
-     */
-    public final String getUuid() {
-        return uuid;
-    }
-
-    /**
-     * TODO Insert setter method comment here.
-     * 
-     * @param uuid the uuid to set
-     */
-    public final void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     /**

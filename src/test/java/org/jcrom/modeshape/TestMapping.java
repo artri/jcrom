@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,11 +24,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,14 +42,8 @@ import java.util.TreeMap;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
 import javax.jcr.Session;
-import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
-
-import junit.framework.Assert;
 
 import org.jcrom.JcrDataProviderImpl;
 import org.jcrom.JcrFile;
@@ -115,9 +107,13 @@ import org.jcrom.invalidobject.InvalidEntity;
 import org.jcrom.util.JcrUtils;
 import org.jcrom.util.NodeFilter;
 import org.jcrom.util.PathUtils;
+import org.jcrom.util.io.IOUtils;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.test.ModeShapeSingleUseTest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -125,7 +121,8 @@ import org.modeshape.test.ModeShapeSingleUseTest;
  * @author Nicolas Dos Santos
  */
 public class TestMapping extends ModeShapeSingleUseTest {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestMapping.class);
+	
     private Parent createParent(String name) {
         Parent parent = new Parent();
         parent.setTitle(name);
@@ -253,66 +250,14 @@ public class TestMapping extends ModeShapeSingleUseTest {
         jcrFile.setDataProvider(new JcrDataProviderImpl(imageFile));
 
         // also read the file to byte array and store it that way
-        jcrFile.setFileBytes(readBytes(new FileInputStream(imageFile)));
+        jcrFile.setFileBytes(IOUtils.readBytesQuietly(new FileInputStream(imageFile)));
 
         return jcrFile;
     }
 
-    private byte[] readBytes(InputStream in) throws Exception {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            // Transfer bytes from in to out
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-        } finally {
-            in.close();
-            out.close();
-        }
-        return out.toByteArray();
-    }
-
-    static void printNode(Node node, String indentation) throws Exception {
-        System.out.println();
-        System.out.println(indentation + "------- NODE -------");
-        System.out.println(indentation + "Path: " + node.getPath());
-
-        System.out.println(indentation + "------- Properties: ");
-        PropertyIterator propertyIterator = node.getProperties();
-        while (propertyIterator.hasNext()) {
-            Property p = propertyIterator.nextProperty();
-            if (!p.getName().equals("jcr:data") && !p.getName().equals("jcr:mixinTypes") && !p.getName().equals("fileBytes")) {
-                System.out.print(indentation + p.getName() + ": ");
-                if (p.getDefinition().getRequiredType() == PropertyType.BINARY) {
-                    System.out.print("binary, (length:" + p.getLength() + ") ");
-                } else if (!p.getDefinition().isMultiple()) {
-                    System.out.print(p.getString());
-                } else {
-                    for (Value v : p.getValues()) {
-                        System.out.print(v.getString() + ", ");
-                    }
-                }
-                System.out.println();
-            }
-
-            if (p.getName().equals("jcr:childVersionHistory")) {
-                System.out.println(indentation + "------- CHILD VERSION HISTORY -------");
-                printNode(node.getSession().getNodeByIdentifier(p.getString()), indentation + "\t");
-                System.out.println(indentation + "------- CHILD VERSION ENDS -------");
-            }
-        }
-
-        NodeIterator nodeIterator = node.getNodes();
-        while (nodeIterator.hasNext()) {
-            printNode(nodeIterator.nextNode(), indentation + "\t");
-        }
-    }
-
     @Test
     public void testGetNodesMethod() throws Exception {
-        Node jcrRootNode = ((Session) session).getRootNode();
+        Node jcrRootNode = session.getRootNode();
         Node rootNode = jcrRootNode.addNode("mapSuperclassTest");
         Node newNode = rootNode.addNode("newNode");
         NodeIterator nodeIterator = rootNode.getNodes("myMap"); // Gets all child nodes that match 'myMap'
@@ -630,7 +575,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
         entity.setMyMap(myMap);
         entity.setPerson(person);
 
-        Node jcrRootNode = ((Session) session).getRootNode();
+        Node jcrRootNode = session.getRootNode();
         Node rootNode = jcrRootNode.addNode("mapSuperclassTest");
         Node newNode = jcrom.addNode(rootNode, entity);
 
@@ -766,8 +711,8 @@ public class TestMapping extends ModeShapeSingleUseTest {
         assertTrue(fromNode.getShape().getArea() == rectangle.getArea());
     }
 
-    @Ignore
     @Test
+    @Ignore
     public void versioningDAO() throws Exception {
 
         Jcrom jcrom = new Jcrom();
@@ -854,7 +799,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
 
         List<VersionedEntity> versions = versionedDao.getVersionList(entity.getPath());
         for (VersionedEntity version : versions) {
-            System.out.println("Version [" + version.getVersionName() + "] [" + version.getBody() + "], base [" + version.getBaseVersionName() + "] [" + version.getBaseVersionCreated() + "]");
+        	LOGGER.info("Version [" + version.getVersionName() + "] [" + version.getBody() + "], base [" + version.getBaseVersionName() + "] [" + version.getBaseVersionCreated() + "]");
         }
 
         // move
@@ -1082,8 +1027,6 @@ public class TestMapping extends ModeShapeSingleUseTest {
         Parent loadedParent = parentDao.get(dad.getPath());
         assertTrue(loadedParent.getNickName().equals(dad.getNickName()));
 
-        Parent uuidParent = parentDao.loadByUUID(loadedParent.getUuid());
-        assertTrue(uuidParent.getNickName().equals(dad.getNickName()));
         Parent idParent = parentDao.loadById(loadedParent.getId());
         assertTrue(idParent.getNickName().equals(dad.getNickName()));
 
@@ -1229,7 +1172,7 @@ public class TestMapping extends ModeShapeSingleUseTest {
     @Test
     public void versioning() throws Exception {
 
-    Node node = ((Session) session).getRootNode().addNode("versionTest");
+    Node node = session.getRootNode().addNode("versionTest");
     node.addMixin("mix:versionable");
     node.setProperty("title", "version 1");
     session.save();
@@ -1246,33 +1189,33 @@ public class TestMapping extends ModeShapeSingleUseTest {
     node.checkin();
 
     // print version history
-    VersionHistory history = ((Session) session).getRootNode().getNode("versionTest").getVersionHistory();
+    VersionHistory history = session.getRootNode().getNode("versionTest").getVersionHistory();
     VersionIterator iterator = history.getAllVersions();
     iterator.skip(1);
     while ( iterator.hasNext() ) {
     Version version = iterator.nextVersion();
-    System.out.println("Version [" + version.getName() + "], [" + version.getPrimaryNodeType().getName() + "], created " + version.getCreated().getTime());
+    LOGGER.info("Version [" + version.getName() + "], [" + version.getPrimaryNodeType().getName() + "], created " + version.getCreated().getTime());
 
     NodeIterator nodeIterator = version.getNodes();
     while ( nodeIterator.hasNext() ) {
     Node versionNode = nodeIterator.nextNode();
-    System.out.println("\tTitle: " + versionNode.getProperty("title").getString());
+    LOGGER.info("\tTitle: " + versionNode.getProperty("title").getString());
 
     if ( versionNode.getParent().isNodeType("nt:version") ) {
     Version parentVersion = (Version) versionNode.getParent();
-    System.out.println("\tVersion name: " + parentVersion.getName() + " " + parentVersion.getCreated().getTime());
+    LOGGER.info("\tVersion name: " + parentVersion.getName() + " " + parentVersion.getCreated().getTime());
     }
     }
     }
 
     // print base version
-    System.out.println("Base version name: " + ((Session) session).getRootNode().getNode("versionTest").getBaseVersion().getName());
+    LOGGER.info("Base version name: " + session.getRootNode().getNode("versionTest").getBaseVersion().getName());
 
     // restore
     node.checkout();
     node.restore("1.0", true);
 
-    System.out.println("Base version name (after restore): " + ((Session) session).getRootNode().getNode("versionTest").getBaseVersion().getName());
+    LOGGER.info("Base version name (after restore): " + session.getRootNode().getNode("versionTest").getBaseVersion().getName());
     }
      */
     /**
@@ -1362,11 +1305,8 @@ public class TestMapping extends ModeShapeSingleUseTest {
         String[] mixinTypes = { "mix:referenceable" };
         Node newNode = jcrom.addNode(rootNode, parent, mixinTypes);
 
-        String uuid = newNode.getUUID();
-        assertTrue(newNode.getUUID() != null && newNode.getUUID().length() > 0);
         String id = newNode.getIdentifier();
         assertTrue(newNode.getIdentifier() != null && newNode.getIdentifier().length() > 0);
-        assertEquals(uuid, id);
         assertTrue(newNode.getProperty("birthDay").getDate().getTime().equals(parent.getBirthDay()));
         assertTrue(newNode.getProperty("weight").getDouble() == parent.getWeight());
         assertTrue((int) newNode.getProperty("fingers").getDouble() == parent.getFingers());
@@ -1389,7 +1329,6 @@ public class TestMapping extends ModeShapeSingleUseTest {
         assertTrue(parentFromNode.getFiles().size() == 3);
 
         // validate properties
-        assertTrue(parentFromNode.getUuid().equals(uuid));
         assertTrue(parentFromNode.getNickName().equals(parent.getNickName()));
         assertTrue(parentFromNode.getBirthDay().equals(parent.getBirthDay()));
         assertTrue(parentFromNode.getWeight() == parent.getWeight());
@@ -1433,10 +1372,10 @@ public class TestMapping extends ModeShapeSingleUseTest {
         // update the node
         jcrom.updateNode(newNode, parent);
 
-        //printNode(newNode, "");
+        //JcrTestUtils.printNode(newNode, "");
         parentFromNode = jcrom.fromNode(Parent.class, newNode);
-        System.out.println("Updated photographer: " + parentFromNode.getPassportPhoto().getPhotographer());
-        System.out.println("InputStream is null: " + (parentFromNode.getPassportPhoto().getDataProvider().getInputStream() == null));
+        LOGGER.info("Updated photographer: " + parentFromNode.getPassportPhoto().getPhotographer());
+        LOGGER.info("InputStream is null: " + (parentFromNode.getPassportPhoto().getDataProvider().getInputStream() == null));
 
         // validate that the node is updated
         assertTrue(newNode.getProperty("birthDay").getDate().getTime().equals(parent.getBirthDay()));

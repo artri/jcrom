@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,13 +30,16 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * General IO stream manipulation utilities.
  * 
  * <p>This class provides static utility methods for input/output operations.</p>
  */
 public final class IOUtils {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(IOUtils.class);
     /**
      * The Unix directory separator character.
      */
@@ -63,7 +66,7 @@ public final class IOUtils {
     public static final String LINE_SEPARATOR;
     static {
         // avoid security issues
-        StringWriter buf = new StringWriter(4);
+        StringWriter buf = new StringWriter();
         PrintWriter out = new PrintWriter(buf);
         out.println();
         LINE_SEPARATOR = buf.toString();
@@ -76,7 +79,7 @@ public final class IOUtils {
      * and
      * {@link #copyLarge(Reader, Writer)}
      */
-    private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
+    private static final int DEFAULT_BUFFER_SIZE = 1024 * 8;
 
     private IOUtils() {
     }
@@ -137,25 +140,68 @@ public final class IOUtils {
                 closeable.close();
             }
         } catch (IOException ioe) {
-            // ignore
+        	// ignore
+        	LOGGER.error(ioe.getMessage(), ioe);
         }
     }
 
     /**
      * Get the contents of an <code>InputStream</code> as a <code>byte[]</code>.
+     * Close the incoming InputStream after read is finished.
      * <p>
      * This method buffers the input internally, so there is no need to use a
      * <code>BufferedInputStream</code>.
      * 
-     * @param input  the <code>InputStream</code> to read from
+     * @param in  the <code>InputStream</code> to read from
+     * @return the requested byte array
+     * @throws NullPointerException if the input is null
+     * @throws IOException if an I/O error occurs
+     */    
+    public static byte[] readBytesQuietly(InputStream in) throws Exception {
+    	try {
+    		return IOUtils.toByteArray(in);
+    	} finally {
+    		closeQuietly(in);
+    	}
+    }
+    
+    /**
+     * Get the contents of an <code>InputStream</code> as a <code>byte[]</code>.
+     * Close the incoming InputStream after read is finished. 
+     * <p>
+     * This method buffers the input internally, so there is no need to use a
+     * <code>BufferedInputStream</code>.
+     * 
+     * @param in  the <code>InputStream</code> to read from
+     * @return the requested byte array
+     * @throws NullPointerException if the input is null
+     * @throws IOException if an I/O error occurs
+     */    
+    public static byte[] readBytes(InputStream in) throws Exception {
+    	try {
+    		return IOUtils.toByteArray(in);
+    	} finally {
+    		in.close();
+    	}
+    }
+    
+    /**
+     * Get the contents of an <code>InputStream</code> as a <code>byte[]</code>.
+     * Leaves the incoming InputStream in opened state. 
+     * <p>
+     * This method buffers the input internally, so there is no need to use a
+     * <code>BufferedInputStream</code>.
+     * 
+     * @param in  the <code>InputStream</code> to read from
      * @return the requested byte array
      * @throws NullPointerException if the input is null
      * @throws IOException if an I/O error occurs
      */
-    public static byte[] toByteArray(InputStream input) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        copy(input, output);
-        return output.toByteArray();
+    public static byte[] toByteArray(InputStream in) throws IOException {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        	copy(in, out);
+        	return out.toByteArray();
+        }
     }
 
     /**
@@ -285,11 +331,17 @@ public final class IOUtils {
     public static long copyLarge(InputStream input, OutputStream output) throws IOException {
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         long count = 0;
-        int n = 0;
-        while (-1 != (n = input.read(buffer))) {
-            output.write(buffer, 0, n);
-            count += n;
+        int read = 0;
+        while (-1 != (read = input.read(buffer))) {
+        	if (read > 0) {
+                output.write(buffer, 0, read);
+                count += read;        		
+        	} else {
+        		output.flush();
+        		Thread.yield();
+        	}
         }
+        output.flush();
         return count;
     }
 

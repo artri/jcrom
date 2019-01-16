@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +56,6 @@ import org.jcrom.annotations.JcrProperty;
 import org.jcrom.annotations.JcrProtectedProperty;
 import org.jcrom.annotations.JcrReference;
 import org.jcrom.annotations.JcrSerializedProperty;
-import org.jcrom.annotations.JcrUUID;
 import org.jcrom.annotations.JcrVersionCreated;
 import org.jcrom.annotations.JcrVersionName;
 import org.jcrom.callback.DefaultJcromCallback;
@@ -204,15 +203,6 @@ class Mapper {
         return findAnnotatedField(obj, JcrName.class);
     }
 
-    /**
-     * @deprecated This method is now deprecated because {@link JcrUUID} annotation is deprecated.<br/>
-     * {@link #findIdField(Object)} with {@link JcrIdentifier} annotation should be used instead.
-     */
-    @Deprecated
-    Field findUUIDField(Object obj) {
-        return findAnnotatedField(obj, JcrUUID.class);
-    }
-
     Field findIdField(Object obj) {
         return findAnnotatedField(obj, JcrIdentifier.class);
     }
@@ -236,18 +226,9 @@ class Mapper {
         return childNodeMapper.getChildContainerNodePath(childObject, parentObject, parentNode);
     }
 
-    /**
-     * @deprecated This method is now deprecated because {@link #findUUIDField(Object)} annotation is deprecated.<br/>
-     * {@link #getNodeId(Object)} should be used instead.
-     */
-    @Deprecated
-    String getNodeUUID(Object object) throws IllegalAccessException {
-        return (String) findUUIDField(object).get(object);
-    }
-
     String getNodeId(Object object) throws IllegalAccessException {
         Field idField = findIdField(object);
-        return idField != null ? (String) typeHandler.getObject(idField, object) : getNodeUUID(object);
+        return idField != null ? (String) typeHandler.getObject(idField, object) : null;
     }
 
     static boolean hasMixinType(Node node, String mixinType) throws RepositoryException {
@@ -284,18 +265,6 @@ class Mapper {
     void setNodePath(Object object, String path) throws IllegalAccessException {
         Field field = findPathField(object);
         typeHandler.setObject(field, object, path);
-    }
-
-    /**
-     * @deprecated This method is now deprecated because {@link #findUUIDField(Object)} annotation is deprecated.<br/>
-     * {@link #setId(Object, String)} should be used instead.
-     */
-    @Deprecated
-    void setUUID(Object object, String uuid) throws IllegalAccessException {
-        Field uuidField = findUUIDField(object);
-        if (uuidField != null) {
-            typeHandler.setObject(uuidField, object, uuid);
-        }
     }
 
     void setId(Object object, String id) throws IllegalAccessException {
@@ -484,10 +453,6 @@ class Mapper {
             setId(entity, node.getIdentifier());
             setNodeName(entity, node.getName());
             setNodePath(entity, node.getPath());
-            if (node.hasProperty(Property.JCR_UUID)) {
-                // setUUID(entity, node.getUUID());
-                setUUID(entity, node.getIdentifier());
-            }
         } else {
             node = parentNode;
         }
@@ -694,11 +659,6 @@ class Mapper {
                 propertyMapper.mapSerializedPropertyToField(obj, field, node, depth, nodeFilter);
             } else if (jcrom.getAnnotationReader().isAnnotationPresent(field, JcrProtectedProperty.class)) {
                 propertyMapper.mapProtectedPropertyToField(obj, field, node);
-            } else if (jcrom.getAnnotationReader().isAnnotationPresent(field, JcrUUID.class)) {
-                if (node.hasProperty(Property.JCR_UUID)) {
-                    // field.set(obj, node.getUUID());
-                    typeHandler.setObject(field, obj, node.getIdentifier());
-                }
             } else if (jcrom.getAnnotationReader().isAnnotationPresent(field, JcrIdentifier.class)) {
                 typeHandler.setObject(field, obj, node.getIdentifier());
             } else if (jcrom.getAnnotationReader().isAnnotationPresent(field, JcrBaseVersionName.class)) {

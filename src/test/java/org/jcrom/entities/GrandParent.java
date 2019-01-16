@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +20,8 @@ package org.jcrom.entities;
 import java.io.Serializable;
 
 import org.jcrom.annotations.JcrChildNode;
+import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrNode;
-import org.jcrom.annotations.JcrUUID;
 
 /**
  *
@@ -33,7 +33,7 @@ public class GrandParent extends AbstractEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @JcrUUID
+    @JcrIdentifier
     String uuid;
     @JcrChildNode
     Parent child;

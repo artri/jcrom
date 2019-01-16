@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,13 @@
  */
 package org.jcrom;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.jcr.Session;
 
 import net.sf.cglib.proxy.LazyLoader;
 
 import org.jcrom.util.SessionFactoryUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract class used by lazy loading classes.
@@ -33,7 +32,7 @@ import org.jcrom.util.SessionFactoryUtils;
  */
 abstract class AbstractLazyLoader implements LazyLoader {
 
-    private static final Logger logger = Logger.getLogger(AbstractLazyLoader.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLazyLoader.class);
 
     private final Session session;
     private final Mapper mapper;
@@ -44,14 +43,11 @@ abstract class AbstractLazyLoader implements LazyLoader {
     }
 
     private Session getSession() {
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Getting the session");
-        }
+    	LOGGER.trace("Getting the session");
+    	
         Session sessionToUse = Jcrom.getCurrentSession() != null ? Jcrom.getCurrentSession() : session;
         if (sessionToUse == null || !sessionToUse.isLive()) {
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Creating a new session");
-            }
+        	LOGGER.debug("Creating a new session");
             SessionFactory sessionFactory = mapper.getJcrom().getSessionFactory();
             sessionToUse = SessionFactoryUtils.getSession(sessionFactory);
         }
@@ -63,9 +59,7 @@ abstract class AbstractLazyLoader implements LazyLoader {
             Session sessionToUse = Jcrom.getCurrentSession() != null ? Jcrom.getCurrentSession() : this.session;
             if (!sessionToUse.equals(session)) {
                 SessionFactoryUtils.releaseSession(session);
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("Closing the newly created session");
-                }
+                LOGGER.debug("Closing the newly created session");
             }
         }
     }

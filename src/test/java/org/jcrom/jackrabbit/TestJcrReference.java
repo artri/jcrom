@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,6 +36,8 @@ import org.jcrom.annotations.JcrName;
 import org.jcrom.annotations.JcrPath;
 import org.jcrom.annotations.JcrReference;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Thanks to Ben Fortuna for providing this test case.
@@ -43,10 +45,10 @@ import org.junit.Test;
  * @author Nicolas Dos Santos
  */
 public class TestJcrReference extends TestAbstract {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestJcrReference.class);
 	@Test
 	public void testCreateWeakReference() throws JcrMappingException, RepositoryException {
-		System.out.println("assert creation of weak reference");
+		LOGGER.info("assert creation of weak reference");
 
 		// initialise jcrom
 		Jcrom jcrom = new Jcrom();
@@ -81,24 +83,24 @@ public class TestJcrReference extends TestAbstract {
 		session.getRootNode().getNode("instanceB").remove();
 
 		// A1 holds a weak reference
-		System.out.println(session.getRootNode().getNode("instanceA1").getProperty("bRef").getString());
+		LOGGER.info(session.getRootNode().getNode("instanceA1").getProperty("bRef").getString());
 		assertEquals(session.getRootNode().getNode("instanceA1").getProperty("bRef").getType(), PropertyType.WEAKREFERENCE);
 		assertEquals(session.getRootNode().getNode("instanceA1").getProperty("bRef").getString(), instanceBID);
 
 		// A2 holds a reference
-		System.out.println(session.getRootNode().getNode("instanceA2").getProperty("bRef").getString());
+		LOGGER.info(session.getRootNode().getNode("instanceA2").getProperty("bRef").getString());
 		assertEquals(session.getRootNode().getNode("instanceA2").getProperty("bRef").getType(), PropertyType.REFERENCE);
 		assertEquals(session.getRootNode().getNode("instanceA2").getProperty("bRef").getString(), instanceBID);
 
 		// A3 holds a reference
-		System.out.println(session.getRootNode().getNode("instanceA3").getProperty("bRef").getString());
+		LOGGER.info(session.getRootNode().getNode("instanceA3").getProperty("bRef").getString());
 		assertEquals(session.getRootNode().getNode("instanceA3").getProperty("bRef").getType(), PropertyType.REFERENCE);
 		assertEquals(session.getRootNode().getNode("instanceA3").getProperty("bRef").getString(), instanceBID);
 	}
 
 	@Test
 	public void testReferentialIntegrity() throws JcrMappingException, RepositoryException {
-		System.out.println("assert referential integrity using weak reference");
+		LOGGER.info("assert referential integrity using weak reference");
 
 		// initialise jcrom
 		Jcrom jcrom = new Jcrom();
@@ -126,7 +128,7 @@ public class TestJcrReference extends TestAbstract {
 
 	@Test(expected = ReferentialIntegrityException.class)
 	public void testNoReferentialIntegrity() throws JcrMappingException, RepositoryException {
-		System.out.println("no referential integrity using default reference");
+		LOGGER.info("no referential integrity using default reference");
 
 		// initialise jcrom
 		Jcrom jcrom = new Jcrom();

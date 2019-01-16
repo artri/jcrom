@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,13 @@
  */
 package org.jcrom;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.jcrom.util.NodeFilter;
 import org.jcrom.util.PathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handles lazy loading of single child node.
@@ -34,7 +33,7 @@ import org.jcrom.util.PathUtils;
  */
 class ChildNodeLoader extends AbstractLazyLoader {
 
-    private static final Logger logger = Logger.getLogger(ChildNodeLoader.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChildNodeLoader.class);
 
     private final Class<?> objectClass;
     private final Object parentObject;
@@ -59,9 +58,8 @@ class ChildNodeLoader extends AbstractLazyLoader {
 
     @Override
     protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Lazy loading single child for " + containerPath);
-        }
+    	LOGGER.debug("Lazy loading single child for: {}", containerPath);
+    	
         Node node;
         if (pathIsContainer) {
             node = PathUtils.getNode(containerPath, session).getNodes().nextNode();

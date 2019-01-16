@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -258,7 +258,6 @@ class ReferenceMapper {
                     mapper.setNodePath(referencedObject, value.getString());
                 } else {
                     // just store the Identifier
-                    mapper.setUUID(referencedObject, value.getString());
                     mapper.setId(referencedObject, value.getString());
                 }
             }

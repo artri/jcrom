@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,14 +23,17 @@ import java.util.List;
 
 import javax.jcr.Node;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author Olafur Gauti Gudmundsson
  * @author Nicolas Dos Santos
  */
 public class NodeFilter implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = -1143520220222899086L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(NodeFilter.class);
 
     public static final int DEPTH_INFINITE = -1;
 
@@ -113,8 +116,7 @@ public class NodeFilter implements Serializable {
                     parent = parent.getParent();
                 }
             } catch (Exception e) {
-                System.err.println(e.getMessage());
-                e.printStackTrace();
+            	LOGGER.error(e.getMessage(), e);
             }
         }
         return isIncluded;

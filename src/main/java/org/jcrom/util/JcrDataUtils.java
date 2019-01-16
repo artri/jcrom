@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,8 @@ import org.jcrom.JcrFile;
 import org.jcrom.JcrMappingException;
 import org.jcrom.util.io.FileUtils;
 import org.jcrom.util.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Contains utilities used for JCR file node
@@ -38,7 +40,8 @@ import org.jcrom.util.io.IOUtils;
  * @author Nicolas Dos Santos
  */
 public final class JcrDataUtils {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(JcrDataUtils.class);
+	
     private JcrDataUtils() {
     }
 
@@ -47,7 +50,7 @@ public final class JcrDataUtils {
         try {
             jcrFile.setMimeType(new Tika().detect(file));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error(e.getMessage(), e);
         }
 
         return jcrFile;
@@ -77,7 +80,7 @@ public final class JcrDataUtils {
         try {
             jcrFile.setMimeType(new Tika().detect(input));
         } catch (IOException e) {
-            e.printStackTrace();
+        	LOGGER.error(e.getMessage(), e);
         }
 
         return jcrFile;

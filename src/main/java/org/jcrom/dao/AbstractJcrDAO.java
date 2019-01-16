@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -307,12 +307,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public T updateByUUID(T entity, String uuid) {
-        return updateById(entity, uuid, new NodeFilter(NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE), null);
-    }
-
-    @Override
     public T updateById(T entity, String id) {
         return updateById(entity, id, new NodeFilter(NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE), null);
     }
@@ -320,12 +314,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     @Override
     public T updateById(T entity, String id, JcromCallback action) {
         return updateById(entity, id, new NodeFilter(NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE), action);
-    }
-
-    @Override
-    @Deprecated
-    public T updateByUUID(T entity, String uuid, String childNameFilter, int maxDepth) {
-        return updateById(entity, uuid, childNameFilter, maxDepth);
     }
 
     @Override
@@ -445,12 +433,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public void removeByUUID(String uuid) {
-        removeById(uuid);
-    }
-
-    @Override
     public void removeById(String id) {
         try {
             Node node = getNodeById(id);
@@ -557,20 +539,8 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public T loadByUUID(String uuid) {
-        return loadById(uuid, NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE);
-    }
-
-    @Override
     public T loadById(String id) {
         return loadById(id, new NodeFilter(NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE));
-    }
-
-    @Override
-    @Deprecated
-    public T loadByUUID(String uuid, String childNameFilter, int maxDepth) {
-        return loadById(uuid, childNameFilter, maxDepth);
     }
 
     @Override
@@ -611,20 +581,8 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public T getVersionByUUID(String uuid, String versionName) {
-        return getVersionById(uuid, versionName, NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE);
-    }
-
-    @Override
     public T getVersionById(String id, String versionName) {
         return getVersionById(id, versionName, new NodeFilter(NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE));
-    }
-
-    @Override
-    @Deprecated
-    public T getVersionByUUID(String uuid, String versionName, String childNameFilter, int maxDepth) {
-        return getVersionById(uuid, versionName, childNameFilter, maxDepth);
     }
 
     @Override
@@ -645,7 +603,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
 
     protected T getVersion(Node node, String versionName, NodeFilter nodeFilter) {
         try {
-            //VersionHistory versionHistory = node.getVersionHistory();
             VersionHistory versionHistory = JcrUtils.getVersionManager(node.getSession()).getVersionHistory(node.getPath());
             Version version = versionHistory.getVersion(versionName);
             return getJcrom().fromNode(getEntityClass(), version.getNodes().nextNode(), nodeFilter);
@@ -657,12 +614,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     @Override
     public void restoreVersion(String path, String versionName) {
         restoreVersion(path, versionName, true);
-    }
-
-    @Override
-    @Deprecated
-    public void restoreVersionByUUID(String uuid, String versionName) {
-        restoreVersionById(uuid, versionName, true);
     }
 
     @Override
@@ -680,12 +631,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public void restoreVersionByUUID(String uuid, String versionName, boolean removeExisting) {
-        restoreVersionById(uuid, versionName, removeExisting);
-    }
-
-    @Override
     public void restoreVersionById(String id, String versionName, boolean removeExisting) {
         try {
             Node node = getNodeById(id);
@@ -697,9 +642,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
 
     protected void restoreVersion(Node node, String versionName, boolean removeExisting) {
         try {
-            //node.checkout();
             JcrUtils.checkout(node);
-            //node.restore(versionName, removeExisting);
             JcrUtils.getVersionManager(node.getSession()).restore(node.getPath(), versionName, removeExisting);
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not restore version", e);
@@ -716,12 +659,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public void removeVersionByUUID(String uuid, String versionName) {
-        removeVersionById(uuid, versionName);
-    }
-
-    @Override
     public void removeVersionById(String id, String versionName) {
         try {
             Node node = getNodeById(id);
@@ -733,7 +670,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
 
     protected void removeVersion(Node node, String versionName) {
         try {
-            //VersionHistory versionHistory = node.getVersionHistory();
             VersionHistory versionHistory = JcrUtils.getVersionManager(node.getSession()).getVersionHistory(node.getPath());
             versionHistory.removeVersion(versionName);
         } catch (RepositoryException e) {
@@ -748,12 +684,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not get version history size", e);
         }
-    }
-
-    @Override
-    @Deprecated
-    public long getVersionSizeByUUID(String uuid) {
-        return getVersionSizeById(uuid);
     }
 
     @Override
@@ -816,12 +746,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public List<T> getVersionListByUUID(String uuid) {
-        return getVersionListById(uuid);
-    }
-
-    @Override
     public List<T> getVersionListById(String id) {
         try {
             Node node = getNodeById(id);
@@ -829,12 +753,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not get version list", e);
         }
-    }
-
-    @Override
-    @Deprecated
-    public List<T> getVersionListByUUID(String uuid, String childNameFilter, int maxDepth) {
-        return getVersionListById(uuid, new NodeFilter(childNameFilter, maxDepth));
     }
 
     @Override
@@ -851,12 +769,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not get version list", e);
         }
-    }
-
-    @Override
-    @Deprecated
-    public List<T> getVersionListByUUID(String uuid, String childNameFilter, int maxDepth, long startIndex, long resultSize) {
-        return getVersionListById(uuid, new NodeFilter(childNameFilter, maxDepth), startIndex, resultSize);
     }
 
     @Override
@@ -878,7 +790,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     protected List<T> getVersionList(Node node, NodeFilter nodeFilter) {
         try {
             List<T> versionList = new ArrayList<T>();
-            //VersionHistory versionHistory = node.getVersionHistory();
             VersionHistory versionHistory = JcrUtils.getVersionManager(node.getSession()).getVersionHistory(node.getPath());
             VersionIterator versionIterator = versionHistory.getAllVersions();
             versionIterator.skip(1);
@@ -887,7 +798,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
                 NodeIterator nodeIterator = version.getNodes();
                 while (nodeIterator.hasNext()) {
                     T entityVersion = getJcrom().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter);
-                    //Version baseVersion = node.getBaseVersion();
                     Version baseVersion = JcrUtils.getVersionManager(node.getSession()).getBaseVersion(node.getPath());
                     getJcrom().setBaseVersionInfo(entityVersion, baseVersion.getName(), baseVersion.getCreated());
                     versionList.add(entityVersion);
@@ -902,7 +812,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     protected List<T> getVersionList(Node node, NodeFilter nodeFilter, long startIndex, long resultSize) {
         try {
             List<T> versionList = new ArrayList<T>();
-            //VersionHistory versionHistory = node.getVersionHistory();
             VersionHistory versionHistory = JcrUtils.getVersionManager(node.getSession()).getVersionHistory(node.getPath());
             VersionIterator versionIterator = versionHistory.getAllVersions();
             versionIterator.skip(1 + startIndex);

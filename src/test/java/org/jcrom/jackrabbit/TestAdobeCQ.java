@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,16 +31,20 @@ import javax.jcr.nodetype.NodeType;
 
 import org.apache.jackrabbit.commons.cnd.CndImporter;
 import org.jcrom.Jcrom;
+import org.jcrom.TestReflection;
 import org.jcrom.entities.PageContentNode;
 import org.jcrom.util.PathUtils;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
  * @author Nicolas Dos Santos
  */
 public class TestAdobeCQ extends TestAbstract {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestAdobeCQ.class);
+	
     @Override
     public void setUpRepository() throws Exception {
         super.setUpRepository();
@@ -70,10 +74,10 @@ public class TestAdobeCQ extends TestAbstract {
             cnd = new FileReader(new File(cndResource.toURI()));
             NodeType[] nodeTypes = CndImporter.registerNodeTypes(cnd, session);
             for (NodeType nt : nodeTypes) {
-                System.out.println("Registered: " + nt.getName());
+                LOGGER.info("Registered: {}", nt.getName());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+        	LOGGER.error(e.getMessage(), e);
             fail(e.getMessage());
         } finally {
             if (cnd != null) {

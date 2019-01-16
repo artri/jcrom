@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,8 @@ import org.jcrom.entities.JcrFileReferenceByPathParentNode;
 import org.jcrom.entities.JcrFileReferenceParentNode;
 import org.jcrom.entities.ReferenceableJCRFile;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -40,10 +42,11 @@ import org.junit.Test;
  * @author Nicolas Dos Santos
  */
 public class TestJcrFileReference extends TestAbstract {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestJcrFileReference.class);
+	
     @Test
     public void testFileReference() throws JcrMappingException, RepositoryException {
-        System.out.println("JcrFileNode with reference");
+        LOGGER.info("JcrFileNode with reference");
 
         // initialise jcrom
         Jcrom jcrom = new Jcrom();
@@ -84,7 +87,7 @@ public class TestJcrFileReference extends TestAbstract {
 
     @Test
     public void testFileReferenceByPath() throws JcrMappingException, RepositoryException {
-        System.out.println("JcrFileNode referenced by path");
+        LOGGER.info("JcrFileNode referenced by path");
 
         // initialise jcrom
         Jcrom jcrom = new Jcrom();

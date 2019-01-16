@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,6 +42,8 @@ import org.jcrom.type.TypeHandler;
 import org.jcrom.util.NodeFilter;
 import org.jcrom.util.ReflectionUtils;
 import org.jcrom.util.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class handles mappings of type @JcrFileNode
@@ -50,7 +52,8 @@ import org.jcrom.util.io.IOUtils;
  * @author Nicolas Dos Santos
  */
 class FileNodeMapper {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(FileNodeMapper.class);
+	
     private final Mapper mapper;
 
     private final TypeHandler typeHandler;
@@ -103,13 +106,13 @@ class FileNodeMapper {
                 //contentNode.setProperty("jcr:data", new ByteArrayInputStream(dataProvider.getBytes()));
                 Binary binary = valueFactory.createBinary(new ByteArrayInputStream(dataProvider.getBytes()));
                 contentNode.setProperty(Property.JCR_DATA, binary);
-            } else if (dataProvider.isStream() && dataProvider.getInputStream() != null) {
+            } else if (dataProvider.isStream() && dataProvider.getInputStream() != null && !BinaryValueJcrDataProvider.class.isAssignableFrom(dataProvider.getClass())) {
                 try {
                     // contentNode.setProperty("jcr:data", dataProvider.getInputStream());
                     Binary binary = valueFactory.createBinary(dataProvider.getInputStream());
                     contentNode.setProperty(Property.JCR_DATA, binary);
                 } catch (RepositoryException re) {
-                    System.out.println("FILE NODE: " + contentNode.getPath() + " " + ((FileInputStream) dataProvider.getInputStream()).available());
+                	LOGGER.error("FILE NODE: {} {}", contentNode.getPath(), ((FileInputStream) dataProvider.getInputStream()).available());
                     throw re;
                 }
             }
@@ -138,13 +141,6 @@ class FileNodeMapper {
         file.setPath(fileNode.getPath());
         // Update the object identifier
         mapper.setId(file, fileNode.getIdentifier());
-        if (fileNode.hasProperty(Property.JCR_UUID)) {
-            //mapper.setUUID(file, fileNode.getUUID());
-            mapper.setUUID(file, fileNode.getIdentifier());
-        }
-        //Node contentNode = fileNode.addNode(Property.JCR_CONTENT, NodeType.NT_RESOURCE);
-        //setFileNodeProperties(contentNode, file);
-
         mapper.addNode(fileNode, file, null, false, null);
     }
 
@@ -154,10 +150,6 @@ class FileNodeMapper {
         file.setPath(fileNode.getPath());
         // Update the object identifier
         mapper.setId(file, fileNode.getIdentifier());
-        if (fileNode.hasProperty(Property.JCR_UUID)) {
-            //mapper.setUUID(file, fileNode.getUUID());
-            mapper.setUUID(file, fileNode.getIdentifier());
-        }
         Node contentNode;
         if (fileNode.hasNode(Property.JCR_CONTENT)) {
             contentNode = fileNode.getNode(Property.JCR_CONTENT);
@@ -366,7 +358,7 @@ class FileNodeMapper {
                 // InputStream is = contentNode.getProperty(Property.JCR_DATA).getBinary().getStream();
                 // JcrDataProviderImpl dataProvider = new JcrDataProviderImpl(is, contentNode.getProperty(Property.JCR_DATA).getLength());
                 Binary binary = contentNode.getProperty(Property.JCR_DATA).getBinary();
-                JcrDataProvider dataProvider = new JcrDataProviderImpl(binary);
+                JcrDataProvider dataProvider = new BinaryValueJcrDataProvider(binary);
                 fileObj.setDataProvider(dataProvider);
             } else if (jcrFileNode.loadType() == JcrFileNode.LoadType.BYTES) {
                 InputStream is = contentNode.getProperty(Property.JCR_DATA).getBinary().getStream();
@@ -428,7 +420,7 @@ class FileNodeMapper {
                 // InputStream is = contentNode.getProperty(Property.JCR_DATA).getBinary().getStream();
                 // JcrDataProviderImpl dataProvider = new JcrDataProviderImpl(is, contentNode.getProperty(Property.JCR_DATA).getLength());
                 Binary binary = contentNode.getProperty(Property.JCR_DATA).getBinary();
-                JcrDataProvider dataProvider = new JcrDataProviderImpl(binary);
+                JcrDataProvider dataProvider = new BinaryValueJcrDataProvider(binary);
                 fileObj.setDataProvider(dataProvider);
             } else if (jcrFileNode.loadType() == JcrFileNode.LoadType.BYTES) {
                 InputStream is = contentNode.getProperty(Property.JCR_DATA).getBinary().getStream();

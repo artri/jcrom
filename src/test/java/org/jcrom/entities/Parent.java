@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +30,6 @@ import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.annotations.JcrIdentifier;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.annotations.JcrProperty;
-import org.jcrom.annotations.JcrUUID;
 
 /**
  *
@@ -44,8 +43,6 @@ public class Parent extends AbstractEntity implements Serializable {
 
     @JcrIdentifier
     private String id;
-    @JcrUUID
-    private String uuid;
     @JcrProperty
     private List<String> tags;
 
@@ -80,14 +77,6 @@ public class Parent extends AbstractEntity implements Serializable {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public Child getAdoptedChild() {

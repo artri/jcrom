@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,6 +37,8 @@ import org.jcrom.type.JavaFXTypeHandler;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.NodeFilter;
 import org.jcrom.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the main entry class for JCROM. To use JCROM, you create an instance of this class, and add the classes you
@@ -49,7 +51,7 @@ import org.jcrom.util.ReflectionUtils;
  * @author Nicolas Dos Santos
  */
 public class Jcrom {
-
+	private static final Logger LOGGER = LoggerFactory.getLogger(Jcrom.class);
     private final Mapper mapper;
     private final Validator validator;
 
@@ -484,34 +486,37 @@ public class Jcrom {
     }
 
     public void logNodeInfos(Node node) throws RepositoryException {
+    	if (!LOGGER.isInfoEnabled()) {
+    		return;
+    	}
         for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
             Property p = iter.nextProperty();
             if (p.isMultiple()) {
                 for (Value value : p.getValues()) {
-                    System.out.println(p.getName() + " = " + value.getString());
+                    LOGGER.info("{} = {}", p.getName(), value.getString());
                 }
             } else {
-                System.out.println(p.getName() + " = " + p.getValue().getString());
+            	LOGGER.info("{} = {}", p.getName(), p.getValue().getString());
             }
         }
         for (PropertyIterator iter = node.getReferences(); iter.hasNext();) {
             Property p = iter.nextProperty();
             if (p.isMultiple()) {
                 for (Value value : p.getValues()) {
-                    System.out.println(p.getName() + " = " + value.getString());
+                	LOGGER.info("{} = {}", p.getName(), value.getString());
                 }
             } else {
-                System.out.println(p.getName() + " = " + p.getValue().getString());
+            	LOGGER.info("{} = {}", p.getName(), p.getValue().getString());
             }
         }
         for (PropertyIterator iter = node.getWeakReferences(); iter.hasNext();) {
             Property p = iter.nextProperty();
             if (p.isMultiple()) {
                 for (Value value : p.getValues()) {
-                    System.out.println(p.getName() + " = " + value.getString());
+                	LOGGER.info("{} = {}", p.getName(), value.getString());
                 }
             } else {
-                System.out.println(p.getName() + " = " + p.getValue().getString());
+            	LOGGER.info("{} = {}", p.getName(), p.getValue().getString());
             }
         }
     }

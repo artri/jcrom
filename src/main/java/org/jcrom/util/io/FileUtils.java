@@ -1,6 +1,6 @@
 /**
  * This file is part of the JCROM project.
- * Copyright (C) 2008-2015 - All rights reserved.
+ * Copyright (C) 2008-2019 - All rights reserved.
  * Authors: Olafur Gauti Gudmundsson, Nicolas Dos Santos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,11 @@
  */
 package org.jcrom.util.io;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -28,78 +30,106 @@ import java.io.InputStream;
  */
 public final class FileUtils {
 
-    private FileUtils() {
-    }
+	private FileUtils() {
+	}
 
-    //-----------------------------------------------------------------------
-    /**
-     * Opens a {@link FileInputStream} for the specified file, providing better
-     * error messages than simply calling <code>new FileInputStream(file)</code>.
-     * <p>
-     * At the end of the method either the stream will be successfully opened,
-     * or an exception will have been thrown.
-     * <p>
-     * An exception is thrown if the file does not exist.
-     * An exception is thrown if the file object exists but is a directory.
-     * An exception is thrown if the file exists but cannot be read.
-     * 
-     * @param file  the file to open for input, must not be <code>null</code>
-     * @return a new {@link FileInputStream} for the specified file
-     * @throws FileNotFoundException if the file does not exist
-     * @throws IOException if the file object is a directory
-     * @throws IOException if the file cannot be read
-     * @since Commons IO 1.3
-     */
-    public static FileInputStream openInputStream(File file) throws IOException {
-        if (file.exists()) {
-            if (file.isDirectory()) {
-                throw new IOException("File '" + file + "' exists but is a directory");
-            }
-            if (file.canRead() == false) {
-                throw new IOException("File '" + file + "' cannot be read");
-            }
-        } else {
-            throw new FileNotFoundException("File '" + file + "' does not exist");
-        }
-        return new FileInputStream(file);
-    }
+	/**
+	 * Opens a {@link FileInputStream} for the specified file, providing better
+	 * error messages than simply calling <code>new FileInputStream(file)</code>.
+	 * <p>
+	 * At the end of the method either the stream will be successfully opened, or an
+	 * exception will have been thrown.
+	 * <p>
+	 * An exception is thrown if the file does not exist. An exception is thrown if
+	 * the file object exists but is a directory. An exception is thrown if the file
+	 * exists but cannot be read.
+	 * 
+	 * @param file the file to open for input, must not be <code>null</code>
+	 * @return a new {@link FileInputStream} for the specified file
+	 * @throws FileNotFoundException if the file does not exist
+	 * @throws IOException           if the file object is a directory
+	 * @throws IOException           if the file cannot be read
+	 * @since Commons IO 1.3
+	 */
+	public static FileInputStream openInputStream(File file) throws IOException {
+		if (file.exists()) {
+			if (file.isDirectory()) {
+				throw new IOException("File '" + file + "' exists but is a directory");
+			}
+			if (file.canRead() == false) {
+				throw new IOException("File '" + file + "' cannot be read");
+			}
+		} else {
+			throw new FileNotFoundException("File '" + file + "' does not exist");
+		}
+		return new FileInputStream(file);
+	}
 
-    /**
-     * Reads the contents of a file into a String.
-     * The file is always closed.
-     *
-     * @param file  the file to read, must not be <code>null</code>
-     * @param encoding  the encoding to use, <code>null</code> means platform default
-     * @return the file contents, never <code>null</code>
-     * @throws IOException in case of an I/O error
-     * @throws java.io.UnsupportedEncodingException if the encoding is not supported by the VM
-     */
-    public static String readFileToString(File file, String encoding) throws IOException {
-        InputStream in = null;
-        try {
-            in = openInputStream(file);
-            return IOUtils.toString(in, encoding);
-        } finally {
-            IOUtils.closeQuietly(in);
-        }
-    }
+	public static FileOutputStream openOutputStream(File file) throws IOException {
+		if (!file.exists()) {
+			file.createNewFile();
+		}
 
-    /**
-     * Reads the contents of a file into a byte array.
-     * The file is always closed.
-     *
-     * @param file  the file to read, must not be <code>null</code>
-     * @return the file contents, never <code>null</code>
-     * @throws IOException in case of an I/O error
-     * @since Commons IO 1.1
-     */
-    public static byte[] readFileToByteArray(File file) throws IOException {
-        InputStream in = null;
-        try {
-            in = openInputStream(file);
-            return IOUtils.toByteArray(in, file.length());
-        } finally {
-            IOUtils.closeQuietly(in);
-        }
-    }
+		return new FileOutputStream(file);
+	}
+
+	/**
+	 * Reads the contents of a file into a String. The file is always closed.
+	 *
+	 * @param file     the file to read, must not be <code>null</code>
+	 * @param encoding the encoding to use, <code>null</code> means platform default
+	 * @return the file contents, never <code>null</code>
+	 * @throws IOException in case of an I/O error
+	 * @throws             java.io.UnsupportedEncodingException if the encoding is
+	 *                     not supported by the VM
+	 */
+	public static String readFileToString(File file, String encoding) throws IOException {
+		InputStream in = null;
+		try {
+			in = openInputStream(file);
+			return IOUtils.toString(in, encoding);
+		} finally {
+			IOUtils.closeQuietly(in);
+		}
+	}
+
+	/**
+	 * Reads the contents of a file into a byte array. The file is always closed.
+	 *
+	 * @param file the file to read, must not be <code>null</code>
+	 * @return the file contents, never <code>null</code>
+	 * @throws IOException in case of an I/O error
+	 * @since Commons IO 1.1
+	 */
+	public static byte[] readFileToByteArray(File file) throws IOException {
+		InputStream in = null;
+		try {
+			in = openInputStream(file);
+			return IOUtils.toByteArray(in, file.length());
+		} finally {
+			IOUtils.closeQuietly(in);
+		}
+	}
+
+	public static void write(InputStream in, File destination) throws IOException {
+		try (InputStream is = in; FileOutputStream out = openOutputStream(destination)) {
+			IOUtils.copyLarge(in, out);
+			out.flush();
+		}
+	}
+
+	public static void write(byte[] bytes, File destination) throws IOException {
+		try (ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+				FileOutputStream out = openOutputStream(destination)) {
+			IOUtils.copyLarge(in, out);
+			out.flush();
+		}
+	}
+
+	public static void write(File source, File destination) throws IOException {
+		try (FileInputStream in = openInputStream(source); FileOutputStream out = openOutputStream(destination)) {
+			IOUtils.copyLarge(in, out);
+			out.flush();
+		}
+	}
 }
