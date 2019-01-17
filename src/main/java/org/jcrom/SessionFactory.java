@@ -63,15 +63,20 @@ public interface SessionFactory extends Serializable, Closeable {
 	 * @throws JcrRuntimeException
 	 */
 	void invalidate() throws JcrRuntimeException;
+
+	/**
+	 * Check if the SessionFactory is still opened.
+	 *
+	 * @return boolean
+	 */	
+	boolean isOpened();
 	
 	/**
-	 * Is this factory already closed?
+	 * Check if the SessionFactory is already closed.
 	 *
 	 * @return True if this factory is already closed; false otherwise.
 	 */
 	boolean isClosed();
-
-	boolean isOpened();
 	
 	/**
 	 * Destroy this <tt>SessionFactory</tt> and release all resources (caches, connection pools, etc).
@@ -86,9 +91,9 @@ public interface SessionFactory extends Serializable, Closeable {
 	
 
 	/*
-	 * Retrieve this factory's {@link TypeHelper}.
+	 * Retrieve this SessionFactory's {@link TypeHelper}.
 	 *
-	 * @return The factory's {@link TypeHelper}
+	 * @return The SessionFactory's {@link TypeHelper}
 	 */
 	//TypeHelper getTypeHelper();
 }

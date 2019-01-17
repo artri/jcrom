@@ -48,7 +48,7 @@ public class SessionFactoryImpl implements SessionFactory {
 	private static final String SESSION_FACTORY_NAME = "SessionFactory";
 	
 	private final String name = SESSION_FACTORY_NAME;
-	private final String uuid = UUID.randomUUID().toString();
+	private String uuid;
 	
 	private transient volatile boolean isClosed;
 	private final transient CurrentSessionContext currentSessionContext;
@@ -93,7 +93,11 @@ public class SessionFactoryImpl implements SessionFactory {
 	/**
 	 * @return the uuid
 	 */
-	public String getUuid() {
+	public String getUUID() {
+		if (null == this.uuid) {
+			// lazy initialization
+			this.uuid = UUID.randomUUID().toString();
+		}
 		return uuid;
 	}
 
@@ -153,21 +157,20 @@ public class SessionFactoryImpl implements SessionFactory {
 
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#isClosed()
-	 */
-	@Override
-	public boolean isClosed() {
-		return this.isClosed;
-	}
-
-	
-	/**
-	 * (non-Javadoc)
 	 * @see org.jcrom.SessionFactory#isOpened()
 	 */
 	@Override
 	public boolean isOpened() {
 		return !isClosed();
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#isClosed()
+	 */
+	@Override
+	public boolean isClosed() {
+		return this.isClosed;
 	}
 
 	/**
