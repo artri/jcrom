@@ -52,16 +52,6 @@ import org.junit.Test;
  * http://wiki.apache.org/jackrabbit/AccessControl
  */
 public class TestUserManager extends TestAbstract {
-
-	@Before
-	public void setUpRepository() throws Exception {
-		super.setUpRepository();
-	}
-
-	@After
-	public void tearDownRepository() throws Exception {
-		super.tearDownRepository();
-	}
 	
     @Ignore
     @Test

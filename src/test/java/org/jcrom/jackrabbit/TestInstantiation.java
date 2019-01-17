@@ -22,12 +22,9 @@ import static org.junit.Assert.assertNotNull;
 
 import javax.jcr.Node;
 
-import org.jcrom.Jcrom;
 import org.jcrom.entities.Child;
 import org.jcrom.entities.DynamicObject;
 import org.jcrom.entities.ReferencedEntity;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -38,15 +35,6 @@ import org.junit.Test;
  * @author Nicolas Dos Santos
  */
 public class TestInstantiation extends TestAbstract {
-	@Before
-	public void setUpRepository() throws Exception {
-		super.setUpRepository();
-	}
-
-	@After
-	public void tearDownRepository() throws Exception {
-		super.tearDownRepository();
-	}
 	
     @Test
     public void test_dynamic_map_instantiation() throws Exception {

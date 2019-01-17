@@ -63,17 +63,7 @@ public class TestJcromCallback extends TestAbstract {
 
         return parent;
     }
-    
-	@Before
-	public void setUpRepository() throws Exception {
-		super.setUpRepository();
-	}
-
-	@After
-	public void tearDownRepository() throws Exception {
-		super.tearDownRepository();
-	}
-	
+    	
     @Test
     public void testJcromCallback() throws RepositoryException {
         jcrom.map(Parent.class);

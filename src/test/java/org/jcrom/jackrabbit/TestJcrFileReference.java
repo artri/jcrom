@@ -27,12 +27,9 @@ import javax.jcr.RepositoryException;
 
 import org.jcrom.JcrDataProviderImpl;
 import org.jcrom.JcrMappingException;
-import org.jcrom.Jcrom;
 import org.jcrom.entities.JcrFileReferenceByPathParentNode;
 import org.jcrom.entities.JcrFileReferenceParentNode;
 import org.jcrom.entities.ReferenceableJCRFile;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,17 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TestJcrFileReference extends TestAbstract {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestJcrFileReference.class);
-	
-	@Before
-	public void setUpRepository() throws Exception {
-		super.setUpRepository();
-	}
-
-	@After
-	public void tearDownRepository() throws Exception {
-		super.tearDownRepository();
-	}
-	
+		
     @Test
     public void testFileReference() throws JcrMappingException, RepositoryException {
         LOGGER.info("JcrFileNode with reference");

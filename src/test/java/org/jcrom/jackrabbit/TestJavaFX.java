@@ -38,8 +38,6 @@ import javax.jcr.RepositoryException;
 
 import org.jcrom.entities.JavaFXEntity;
 import org.jcrom.util.PathUtils;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -136,16 +134,6 @@ public class TestJavaFX extends TestAbstract {
         return entity;
     }
 
-	@Before
-	public void setUpRepository() throws Exception {
-		super.setUpRepository();
-	}
-
-	@After
-	public void tearDownRepository() throws Exception {
-		super.tearDownRepository();
-	}
-	
     @Test
     public void testJavaFX() throws RepositoryException {
         jcrom.map(JavaFXEntity.class);

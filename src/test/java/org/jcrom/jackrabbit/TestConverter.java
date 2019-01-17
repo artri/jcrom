@@ -46,16 +46,6 @@ import org.junit.Test;
  * @author Nicolas Dos Santos
  */
 public class TestConverter extends TestAbstract {
-
-	@Before
-	public void setUpRepository() throws Exception {
-		super.setUpRepository();
-	}
-
-	@After
-	public void tearDownRepository() throws Exception {
-		super.tearDownRepository();
-	}
 	
     @Test
     public void testConverter() throws RepositoryException {

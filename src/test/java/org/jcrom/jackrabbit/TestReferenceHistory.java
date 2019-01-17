@@ -40,16 +40,6 @@ import org.junit.Test;
  */
 public class TestReferenceHistory extends TestAbstract {
 
-	@Before
-	public void setUpRepository() throws Exception {
-		super.setUpRepository();
-	}
-
-	@After
-	public void tearDownRepository() throws Exception {
-		super.tearDownRepository();
-	}
-	
     @Test
     public final void testReferenceHistoryMaxDepth() throws Exception {
         jcrom.map(HierarchyNode.class);

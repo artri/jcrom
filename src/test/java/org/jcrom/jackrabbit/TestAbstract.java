@@ -29,7 +29,9 @@ import org.apache.jackrabbit.core.TransientRepository;
 import org.jcrom.Jcrom;
 import org.jcrom.internal.SessionFactoryImpl;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,14 +43,14 @@ import org.slf4j.LoggerFactory;
 public class TestAbstract {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestAbstract.class);
 	
-    protected Repository repo;
-    protected String userID = "admin";
-    protected char[] password = "admin".toCharArray();
+    protected static Repository repo;
+    protected static String userID = "admin";
+    protected static char[] password = "admin".toCharArray();
 
-    protected Jcrom jcrom;
+    protected static Jcrom jcrom;
     
-    @Before
-    public void setUpRepository() throws Exception {
+    @BeforeClass
+    public static void beforeClass() {
     	LOGGER.info("Setting up repository");
     	
         deleteDir(new File("repository"));
@@ -58,18 +60,28 @@ public class TestAbstract {
         repo = new TransientRepository();
         
         jcrom = new Jcrom(true, true);
-        jcrom.setSessionFactory(new SessionFactoryImpl(repo, new SimpleCredentials(userID, password)));
+        jcrom.setSessionFactory(new SessionFactoryImpl(repo, new SimpleCredentials(userID, password)));    	
     }
-
-    @After
-    public void tearDownRepository() throws Exception {
-    	LOGGER.info("Setting up repository");
+    
+    @AfterClass
+    public static void afterClass() {
+    	LOGGER.info("Shutting down repository");
     	
     	jcrom.getSessionFactory().close();
     	
         deleteDir(new File("repository"));
         new File("repository.xml").delete();
-        new File("derby.log").delete();
+        new File("derby.log").delete();    	
+    }
+    
+    @Before
+    public void setUpRepository() throws Exception {
+    	jcrom.getSessionFactory().invalidate();
+    }
+
+    @After
+    public void tearDownRepository() throws Exception {
+    	jcrom.getSessionFactory().invalidate();
     }
 
     protected Session getSession() {

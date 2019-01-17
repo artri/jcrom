@@ -49,16 +49,6 @@ import org.slf4j.LoggerFactory;
 public class TestJcrReference extends TestAbstract {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestJcrReference.class);
 	
-	@Before
-	public void setUpRepository() throws Exception {
-		super.setUpRepository();
-	}
-
-	@After
-	public void tearDownRepository() throws Exception {
-		super.tearDownRepository();
-	}
-	
 	@Test
 	public void testCreateWeakReference() throws JcrMappingException, RepositoryException {
 		LOGGER.info("assert creation of weak reference");
