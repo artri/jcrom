@@ -15,7 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom;
+package org.jcrom.internal;
+
+import java.util.UUID;
 
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
@@ -24,6 +26,12 @@ import javax.jcr.Session;
 import javax.jcr.Workspace;
 import javax.jcr.observation.ObservationManager;
 
+import org.jcrom.EventListenerDefinition;
+import org.jcrom.JcrMappingException;
+import org.jcrom.JcrRuntimeException;
+import org.jcrom.SessionFactory;
+import org.jcrom.context.CurrentSessionContext;
+import org.jcrom.context.internal.ThreadLocalSessionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,12 +45,17 @@ import org.slf4j.LoggerFactory;
  */
 public class SessionFactoryImpl implements SessionFactory {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionFactoryImpl.class);
+	private static final String SESSION_FACTORY_NAME = "SessionFactory";
+	
+	private final String name = SESSION_FACTORY_NAME;
+	private final String uuid = UUID.randomUUID().toString();
+	
+	private transient volatile boolean isClosed;
+	private final transient CurrentSessionContext currentSessionContext;
 	
     private Credentials credentials;
     private String workspaceName;
-
     private Repository repository;
-    private final ThreadLocal<Session> currentSession = new ThreadLocal<Session>();
 
     private EventListenerDefinition eventListeners[] = new EventListenerDefinition[] {};
     
@@ -51,6 +64,7 @@ public class SessionFactoryImpl implements SessionFactory {
      * Use this constructor if you can set repository, credentials by injection
      **/
     public SessionFactoryImpl() {
+    	this(null);
     }
 
     public SessionFactoryImpl(Repository repository) {
@@ -65,45 +79,119 @@ public class SessionFactoryImpl implements SessionFactory {
         this.repository = repository;
         this.credentials = credentials;
         this.workspaceName = workspaceName;
+        
+        this.currentSessionContext = buildCurrentSessionContext();
     }
 
-    @Override
-    public Session getSession() throws JcrMappingException {
-	    Session session = currentSession.get();
-	    if (null == session) {
-	    	session = createSession();
-	    	currentSession.set(session);
-	    }
-		return session;
-    }
-    
     /**
-     * Close the current JCR Session
-     * @param session the Session to close
-     */
-    public void releaseSession() throws JcrMappingException {
-	    Session session = currentSession.get();
-	    if (null != session) {
-	    	LOGGER.debug("Closing the session");
-	    	currentSession.set(null);
-	    	session.logout();
-	    }
-    }
-    
-    /**
-     * Create a new JCR Session from the SessionFactory
-     * @throws JcrMappingException
-     * @return {@link Session}
-     */    
-    private Session createSession() throws JcrMappingException {
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @return the uuid
+	 */
+	public String getUuid() {
+		return uuid;
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#openSession()
+	 */
+	@Override
+	public Session openSession() throws JcrRuntimeException {
+		LOGGER.trace("Open JCR session");
+		
         try {
             Session session = repository.login(credentials, workspaceName);
             return addListeners(session);
         } catch (RepositoryException ex) {
         	LOGGER.error(ex.getMessage(), ex);
             throw new JcrMappingException("Could not open Jcr Session", ex);
-        }
+        }		
+	}
+
+    /**
+     * Close the current JCR Session
+     * @param session the Session to close
+     */
+	@Override
+    public void releaseSession(Session session) throws JcrRuntimeException {
+	    if (null != session) {
+	    	LOGGER.debug("Releasing the session");
+	    	session.logout();
+	    }
     }
+    
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#getCurrentSession()
+	 */
+	@Override
+	public Session getCurrentSession() throws JcrRuntimeException {
+		if (null == currentSessionContext) {
+			throw new JcrRuntimeException("No CurrentSessionContext configured!");
+		}
+		return currentSessionContext.getCurrentSession();
+	}
+
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#invalidate()
+	 */
+	@Override
+	public void invalidate() throws JcrRuntimeException {
+		if (null == currentSessionContext) {
+			throw new JcrRuntimeException("No CurrentSessionContext configured!");
+		}
+		((ThreadLocalSessionContext) currentSessionContext).unbind(this);
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#isClosed()
+	 */
+	@Override
+	public boolean isClosed() {
+		return this.isClosed;
+	}
+
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#isOpened()
+	 */
+	@Override
+	public boolean isOpened() {
+		return !isClosed();
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#close()
+	 */
+	@Override
+	public void close() throws JcrRuntimeException {
+		synchronized(this) {
+			if (isClosed) {
+				LOGGER.trace("Already closed");
+				return;
+			}
+			
+			isClosed = true;
+		}
+		
+		LOGGER.trace("Closing SessionFactory");
+		invalidate();
+	}
+
+	private CurrentSessionContext buildCurrentSessionContext() {
+		return new ThreadLocalSessionContext(this);
+	}
     
     /**
      * Hook for adding listeners to the newly returned session. We have to treat exceptions manually and can't
@@ -192,15 +280,15 @@ public class SessionFactoryImpl implements SessionFactory {
      * @return
      */
     private String getRepositoryInfo() {
-        if (getRepository() == null) {
+        if (null == getRepository()) {
             return "<N/A>";
         }
 
-        StringBuffer buffer = new StringBuffer();
-        buffer.append(getRepository().getDescriptor(Repository.REP_NAME_DESC));
-        buffer.append(" ");
-        buffer.append(getRepository().getDescriptor(Repository.REP_VERSION_DESC));
-        return buffer.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append(getRepository().getDescriptor(Repository.REP_NAME_DESC));
+        sb.append(" ");
+        sb.append(getRepository().getDescriptor(Repository.REP_VERSION_DESC));
+        return sb.toString();
     }
 
     private static boolean supportsObservation(Repository repository) {

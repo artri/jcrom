@@ -29,13 +29,13 @@ import javax.jcr.SimpleCredentials;
 
 import org.jcrom.JcrFile;
 import org.jcrom.SessionFactory;
-import org.jcrom.SessionFactoryImpl;
 import org.jcrom.dao.TreeDAO;
 import org.jcrom.entities.DynamicObject;
 import org.jcrom.entities.LazyInterface;
 import org.jcrom.entities.LazyObject;
 import org.jcrom.entities.Tree;
 import org.jcrom.entities.TreeNode;
+import org.jcrom.internal.SessionFactoryImpl;
 import org.junit.Test;
 
 /**

@@ -21,9 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import javax.jcr.Node;
-import javax.jcr.SimpleCredentials;
 
-import org.jcrom.Jcrom;
 import org.jcrom.entities.Document;
 import org.jcrom.entities.Folder;
 import org.jcrom.entities.FolderReference;
@@ -96,7 +94,7 @@ public class TestReferenceHistory extends TestAbstract {
         Node directoryA1Node = getSession().getNodeByIdentifier(directoryA1.getId());
         jcrom.updateNode(directoryA1Node, directoryA1);
         save();
-        jcrom.getSessionFactory().releaseSession();
+        jcrom.getSessionFactory().invalidate();
         
         // now search the for
         Node directoryANode = getSession().getNodeByIdentifier(directoryA.getId());

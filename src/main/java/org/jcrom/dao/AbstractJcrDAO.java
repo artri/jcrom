@@ -131,11 +131,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     protected final Session getSession() {
-        return jcrom.getSessionFactory().getSession();
-    }
-
-    protected final void releaseSession() {
-    	jcrom.getSessionFactory().releaseSession();
+        return jcrom.getSessionFactory().getCurrentSession();
     }
     
     protected Jcrom getJcrom() {

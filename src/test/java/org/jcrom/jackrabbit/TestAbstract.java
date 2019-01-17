@@ -27,7 +27,7 @@ import javax.jcr.SimpleCredentials;
 
 import org.apache.jackrabbit.core.TransientRepository;
 import org.jcrom.Jcrom;
-import org.jcrom.SessionFactoryImpl;
+import org.jcrom.internal.SessionFactoryImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -65,7 +65,7 @@ public class TestAbstract {
     public void tearDownRepository() throws Exception {
     	LOGGER.info("Setting up repository");
     	
-    	jcrom.getSessionFactory().releaseSession();
+    	jcrom.getSessionFactory().close();
     	
         deleteDir(new File("repository"));
         new File("repository.xml").delete();
@@ -73,7 +73,7 @@ public class TestAbstract {
     }
 
     protected Session getSession() {
-    	return jcrom.getSessionFactory().getSession();
+    	return jcrom.getSessionFactory().getCurrentSession();
     }
     
     protected Node getRootNode() throws RepositoryException {

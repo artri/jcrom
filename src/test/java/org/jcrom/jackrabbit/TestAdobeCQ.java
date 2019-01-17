@@ -71,7 +71,7 @@ public class TestAdobeCQ extends TestAbstract {
         FileReader cnd = null;
         try {
             cnd = new FileReader(new File(cndResource.toURI()));
-            NodeType[] nodeTypes = CndImporter.registerNodeTypes(cnd, jcrom.getSessionFactory().getSession());
+            NodeType[] nodeTypes = CndImporter.registerNodeTypes(cnd, jcrom.getSessionFactory().getCurrentSession());
             for (NodeType nt : nodeTypes) {
                 LOGGER.info("Registered: {}", nt.getName());
             }

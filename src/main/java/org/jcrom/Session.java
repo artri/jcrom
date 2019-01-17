@@ -17,20 +17,8 @@
  */
 package org.jcrom;
 
-/**
- * A runtime exception that is thrown when mapping errors occur.
- * 
- * @author Olafur Gauti Gudmundsson
- * @author Nicolas Dos Santos
- */
-public class JcrMappingException extends JcrRuntimeException {
-	private static final long serialVersionUID = 365025995871966148L;
+import java.io.Closeable;
 
-	public JcrMappingException(String message) {
-        super(message);
-    }
+public interface Session extends AutoCloseable, Closeable {
 
-    public JcrMappingException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

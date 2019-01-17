@@ -15,22 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom;
+package org.jcrom.context;
 
-/**
- * A runtime exception that is thrown when mapping errors occur.
- * 
- * @author Olafur Gauti Gudmundsson
- * @author Nicolas Dos Santos
- */
-public class JcrMappingException extends JcrRuntimeException {
-	private static final long serialVersionUID = 365025995871966148L;
+import java.io.Serializable;
 
-	public JcrMappingException(String message) {
-        super(message);
-    }
+import javax.jcr.Session;
 
-    public JcrMappingException(String message, Throwable cause) {
-        super(message, cause);
-    }
+import org.jcrom.JcrRuntimeException;
+
+public interface CurrentSessionContext extends Serializable {
+	
+	/**
+	 * Retrieve the current session according to the scoping defined
+	 * by this implementation.
+	 * 
+	 * @return The current session.
+	 * @throws JcrRuntimeException Typically indicates an issue locating or creating the current session.
+	 */
+	public Session getCurrentSession() throws JcrRuntimeException;
 }

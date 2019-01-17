@@ -37,28 +37,13 @@ abstract class AbstractLazyLoader implements LazyLoader {
     public AbstractLazyLoader(Mapper mapper) {
         this.mapper = mapper;
     }
-    
-//    public AbstractLazyLoader(Session session, Mapper mapper) {
-//        this.session = session;
-//        this.mapper = mapper;
-//    }
 
     @Override
-    public final Object loadObject() throws Exception {
+    public final Object loadObject() throws JcrMappingException, Exception {
     	LOGGER.trace("loadObject");
-        // Retrieve the session. If the session is closed, create a new session
-    	Session session = null;
-    	try {
-            session = mapper.getJcrom().getSessionFactory().getSession();
-            // Load object
-            Object obj = doLoadObject(session, mapper);
-            return obj;
-    	} finally {
-    		if (null != session) {
-                // Close only the newly created session
-                mapper.getJcrom().getSessionFactory().releaseSession();    			
-    		}
-    	}
+    	Session session = mapper.getJcrom().getSessionFactory().getCurrentSession();
+        // Load object
+        return doLoadObject(session, mapper);    	
     }
 
     protected abstract Object doLoadObject(Session session, Mapper mapper) throws Exception;

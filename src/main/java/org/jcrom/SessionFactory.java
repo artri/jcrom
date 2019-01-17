@@ -17,6 +17,9 @@
  */
 package org.jcrom;
 
+import java.io.Closeable;
+import java.io.Serializable;
+
 import javax.jcr.Session;
 
 /**
@@ -24,10 +27,10 @@ import javax.jcr.Session;
  * 
  * @author Nicolas Dos Santos
  */
-public interface SessionFactory {
+public interface SessionFactory extends Serializable, Closeable {
 
     /**
-     * Returns a Session using the credentials and workspace on this SessionFactory implementation. The session
+     * Opens a Session using the credentials and workspace on this SessionFactory implementation. The session
      * factory doesn't allow specification of a different workspace name because:
      * <p>
      *" Each Session object is associated one-to-one with a Workspace object. The Workspace object represents
@@ -35,13 +38,57 @@ public interface SessionFactory {
      * associated Session." (quote from javax.jcr.Session javadoc).
      * </p>
      * @return the session.
-     * @throws JcrMappingException
-     */
-    Session getSession() throws JcrMappingException;
-
+	 * 
+	 * @return The created session
+	 * @throws JcrRuntimeException Indicates a problem opening the session; pretty rare here.
+	 */
+	Session openSession() throws JcrRuntimeException;
+	
     /**
      * Close the current JCR Session
      * @param session the Session to close
      */    
-    void releaseSession() throws JcrMappingException;
+    void releaseSession(Session session) throws JcrRuntimeException;
+    
+	/**
+	 * Obtains the current {@link Session}.
+	 * 
+	 * @return The current session
+	 * @throws JcrRuntimeException Indicates an issue locating a suitable current session.
+	 */
+	Session getCurrentSession() throws JcrRuntimeException;
+	
+	/**
+	 * Close currently active session
+	 * @throws JcrRuntimeException
+	 */
+	void invalidate() throws JcrRuntimeException;
+	
+	/**
+	 * Is this factory already closed?
+	 *
+	 * @return True if this factory is already closed; false otherwise.
+	 */
+	boolean isClosed();
+
+	boolean isOpened();
+	
+	/**
+	 * Destroy this <tt>SessionFactory</tt> and release all resources (caches, connection pools, etc).
+	 * 
+	 * It is the responsibility of the application to ensure that there are no
+	 * open {@link Session sessions} before calling this method as the impact
+	 * on those {@link Session sessions} is indeterminate.
+	 * 
+	 * @throws JcrRuntimeException Indicates an issue closing the factory.
+	 */
+	void close() throws JcrRuntimeException;
+	
+
+	/*
+	 * Retrieve this factory's {@link TypeHelper}.
+	 *
+	 * @return The factory's {@link TypeHelper}
+	 */
+	//TypeHelper getTypeHelper();
 }
