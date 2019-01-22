@@ -21,6 +21,50 @@ import java.io.Closeable;
 import java.io.Serializable;
 
 public interface Session extends Serializable, AutoCloseable, Closeable {
+	//===== SharedSessionContract =====
+	
+	/**
+	 * End this <tt>Session</tt> by releasing the JCR connection and cleaning up.
+	 * 
+	 * @throws JcrRuntimeException Indicates an issue closing the factory.
+	 */
+	void close() throws JcrRuntimeException;	
+	
+	/**
+	 * Check if the session is still open.
+	 *
+	 * @return boolean
+	 */	
+	boolean isOpened();
+
+	/**
+	 * Check if the session is currently connected.
+	 *
+	 * @return boolean
+	 */
+	boolean isConnected();
+
+	/**
+	 * Begin a unit of work and return the associated {@link Transaction} object.  If a new underlying transaction is
+	 * required, begin the transaction.  Otherwise continue the new work in the context of the existing underlying
+	 * transaction.
+	 *
+	 * @return a Transaction instance
+	 *
+	 * @see #getTransaction
+	 */
+	Transaction beginTransaction();
+
+	/**
+	 * Get the {@link Transaction} instance associated with this session.  The concrete type of the returned
+	 * {@link Transaction} object is determined by the {@code hibernate.transaction_factory} property.
+	 *
+	 * @return a Transaction instance
+	 */
+	Transaction getTransaction();
+	
+	//===== Session =====
+	
 	/**
 	 * Get the session factory which created this session.
 	 *
@@ -30,52 +74,45 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	SessionFactory getSessionFactory();
 	
 	/**
-	 * Check if the Session is still opened.
+	 * Force this session to flush. Must be called at the end of a
+	 * unit of work, before committing the transaction and closing the
+	 * session (depending on {@link #setFlushMode(FlushMode)},
+	 * {@link Transaction#commit()} calls this method).
+	 * <p/>
+	 * <i>Flushing</i> is the process of synchronizing the underlying persistent
+	 * store with persistable state held in memory.
 	 *
-	 * @return boolean
-	 */	
-	boolean isOpened();
+	 * @throws JcrRuntimeException Indicates problems flushing the session or talking to the repository.
+	 */
+	void flush() throws JcrRuntimeException;
 	
 	/**
-	 * Check if the Session is already closed.
-	 *
-	 * @return True if this factory is already closed; false otherwise.
+	 * Completely clear the session. Evict all loaded instances and cancel all pending
+	 * saves, updates and deletions.
 	 */
-	boolean isClosed();
+	void clear();
 	
 	/**
-	 * Checks whether the session is open or is waiting for auto-close
+	 * Set the flush mode for this session.
+	 * <p/>
+	 * The flush mode determines the points at which the session is flushed.
+	 * <i>Flushing</i> is the process of synchronizing the underlying persistent
+	 * store with persistable state held in memory.
+	 * <p/>
+	 * For a logically "read only" session, it is reasonable to set the session's
+	 * flush mode to {@link FlushMode#MANUAL} at the start of the session (in
+	 * order to achieve some extra performance).
 	 *
-	 * @return {@code true} if the session is closed or if it's waiting for auto-close; {@code false} otherwise.
+	 * @param flushMode the new flush mode
 	 */
-	default boolean isOpenOrWaitingForAutoClose() {
-		return !isClosed();
-	}
+	void setFlushMode(FlushMode flushMode);
 
 	/**
-	 * Performs a check whether the Session is open, and if not:<ul>
-	 *     <li>marks current transaction (if one) for rollback only</li>
-	 *     <li>throws an IllegalStateException (JPA defines the exception type)</li>
-	 * </ul>
-	 */
-	default void checkOpen() {
-		checkOpen(true);
-	}
-
-	/**
-	 * Performs a check whether the Session is open, and if not:<ul>
-	 *     <li>if {@code markForRollbackIfClosed} is true, marks current transaction (if one) for rollback only</li>
-	 *     <li>throws an IllegalStateException (JPA defines the exception type)</li>
-	 * </ul>
-	 */
-	void checkOpen(boolean markForRollbackIfClosed);
-
-	/**
-	 * Check if the session is currently connected.
+	 * Get the current flush mode for this session.
 	 *
-	 * @return boolean
+	 * @return The flush mode
 	 */
-	boolean isConnected();
+	FlushMode getFlushMode();
 	
 	/**
 	 * Does this session contain any changes which must be synchronized with
@@ -97,7 +134,7 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 *         false, loaded entities/proxies will be made modifiable by default. 
 	 */
 	boolean isDefaultReadOnly();
-
+	
 	/**
 	 * Change the default for entities and proxies loaded into this session
 	 * from modifiable to read-only mode, or from modifiable to read-only mode.
@@ -118,7 +155,19 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 * @param readOnly true, the default for loaded entities/proxies is read-only;
 	 *                 false, the default for loaded entities/proxies is modifiable
 	 */
-	void setDefaultReadOnly(boolean readOnly);
+	void setDefaultReadOnly(boolean readOnly);	
+	
+	/**
+	 * Return the identifier value of the given entity as associated with this
+	 * session.  An exception is thrown if the given entity instance is transient
+	 * or detached in relation to this session.
+	 *
+	 * @param object a persistent instance
+	 * @return the identifier
+	 * @throws TransientObjectException if the instance is transient or associated with
+	 * a different session
+	 */
+	Serializable getIdentifier(Object object);	
 	
 	/**
 	 * Is the specified entity or proxy read-only?
@@ -149,98 +198,10 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 * proxy should be made modifiable
 	 */
 	void setReadOnly(Object entityOrProxy, boolean readOnly);
-
-	/**
-	 * Return the identifier value of the given entity as associated with this
-	 * session.  An exception is thrown if the given entity instance is transient
-	 * or detached in relation to this session.
-	 *
-	 * @param object a persistent instance
-	 * @return the identifier
-	 * @throws TransientObjectException if the instance is transient or associated with
-	 * a different session
-	 */
-	Serializable getIdentifier(Object object);
 	
-	/**
-	 * Completely clear the session. Evict all loaded instances and cancel all pending
-	 * saves, updates and deletions.
-	 */
-	void clear();
 	
-	/**
-	 * Force this session to flush. Must be called at the end of a
-	 * unit of work, before committing the transaction and closing the
-	 * session (depending on {@link #setFlushMode(FlushMode)},
-	 * {@link Transaction#commit()} calls this method).
-	 * <p/>
-	 * <i>Flushing</i> is the process of synchronizing the underlying persistent
-	 * store with persistable state held in memory.
-	 *
-	 * @throws JcrRuntimeException Indicates problems flushing the session or talking to the repository.
-	 */
-	void flush() throws JcrRuntimeException;
-	
-	/**
-	 * Set the flush mode for this session.
-	 * <p/>
-	 * The flush mode determines the points at which the session is flushed.
-	 * <i>Flushing</i> is the process of synchronizing the underlying persistent
-	 * store with persistable state held in memory.
-	 * <p/>
-	 * For a logically "read only" session, it is reasonable to set the session's
-	 * flush mode to {@link FlushMode#MANUAL} at the start of the session (in
-	 * order to achieve some extra performance).
-	 *
-	 * @param flushMode the new flush mode
-	 */
-	void setFlushMode(FlushMode flushMode);
+	//===== METHODS BELOW MIGHT BE MOVED TO SessionImplementor
 
-	/**
-	 * Get the current flush mode for this session.
-	 *
-	 * @return The flush mode
-	 */
-	FlushMode getFlushMode();
-	
-	/**
-	 * Begin a unit of work and return the associated {@link Transaction} object.  If a new underlying transaction is
-	 * required, begin the transaction.  Otherwise continue the new work in the context of the existing underlying
-	 * transaction.
-	 *
-	 * @return a Transaction instance
-	 *
-	 * @see #getTransaction
-	 */
-	Transaction beginTransaction();
-
-	/**
-	 * Get the {@link Transaction} instance associated with this session.  The concrete type of the returned
-	 * {@link Transaction} object is determined by the {@code hibernate.transaction_factory} property.
-	 *
-	 * @return a Transaction instance
-	 */
-	Transaction getTransaction();
-	
-	/**
-	 * Does this <tt>Session</tt> have an active transaction
-	 * or is there a JTA transaction in progress?
-	 */
-	boolean isTransactionInProgress();
-
-	/**
-	 * Provides access to the underlying transaction or creates a new transaction if
-	 * one does not already exist or is active.  This is primarily for internal or
-	 * integrator use.
-	 *
-	 * @return the transaction
-     */
-	Transaction accessTransaction();
-
-	/**
-	 * Marks current transaction (if one) for rollback only
-	 */
-	void markForRollbackOnly();
 	
 	/*
 	 * Convenience access to the {@link TypeHelper} associated with this session's {@link SessionFactory}.

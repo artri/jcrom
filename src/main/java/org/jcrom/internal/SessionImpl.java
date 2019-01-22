@@ -25,6 +25,7 @@ import org.jcrom.JcrRuntimeException;
 import org.jcrom.Session;
 import org.jcrom.SessionFactory;
 import org.jcrom.Transaction;
+import org.jcrom.engine.spi.SessionImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * <p/>
  * This class is not thread-safe.
  */
-public class SessionImpl implements Session {
+public class SessionImpl implements SessionImplementor {
 	private static final long serialVersionUID = -8254588340258340383L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionImpl.class);
 	
@@ -49,7 +50,7 @@ public class SessionImpl implements Session {
 	private boolean waitingForAutoClose;
 	private boolean closed;
 	
-	public SessionImpl(SessionFactoryImpl sessionFactory) {
+	public SessionImpl(SessionFactoryImpl sessionFactory, SessionCreationOptions options) {
 		this.sessionFactory = sessionFactory;
 		this.flushMode = FlushMode.AUTO;
 	}

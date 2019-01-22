@@ -20,7 +20,7 @@ package org.jcrom;
 import java.io.Closeable;
 import java.io.Serializable;
 
-import javax.jcr.Session;
+import org.jcrom.engine.spi.SessionFactoryOptions;
 
 /**
  * Session Factory interface. This interface describes a simplfied contract for retrieving a session.
@@ -28,6 +28,19 @@ import javax.jcr.Session;
  * @author Nicolas Dos Santos
  */
 public interface SessionFactory extends Serializable, Closeable {
+	/**
+	 * Get the special options used to build the factory.
+	 *
+	 * @return The special options used to build the factory.
+	 */
+	SessionFactoryOptions getSessionFactoryOptions();
+	
+	/**
+	 * Obtain a {@link Session} builder.
+	 *
+	 * @return The session builder
+	 */
+	SessionBuilder withOptions();
 
     /**
      * Opens a Session using the credentials and workspace on this SessionFactory implementation. The session
@@ -44,12 +57,6 @@ public interface SessionFactory extends Serializable, Closeable {
 	 */
 	Session openSession() throws JcrRuntimeException;
 	
-    /**
-     * Close the current JCR Session
-     * @param session the Session to close
-     */    
-    void releaseSession(Session session) throws JcrRuntimeException;
-    
 	/**
 	 * Obtains the current {@link Session}.
 	 * 
@@ -57,19 +64,6 @@ public interface SessionFactory extends Serializable, Closeable {
 	 * @throws JcrRuntimeException Indicates an issue locating a suitable current session.
 	 */
 	Session getCurrentSession() throws JcrRuntimeException;
-	
-	/**
-	 * Close currently active session
-	 * @throws JcrRuntimeException
-	 */
-	void invalidate() throws JcrRuntimeException;
-
-	/**
-	 * Check if the SessionFactory is still opened.
-	 *
-	 * @return boolean
-	 */	
-	boolean isOpened();
 	
 	/**
 	 * Check if the SessionFactory is already closed.
@@ -87,13 +81,33 @@ public interface SessionFactory extends Serializable, Closeable {
 	 * 
 	 * @throws JcrRuntimeException Indicates an issue closing the factory.
 	 */
-	void close() throws JcrRuntimeException;
+	void close() throws JcrRuntimeException;	
 	
-
 	/*
 	 * Retrieve this SessionFactory's {@link TypeHelper}.
 	 *
 	 * @return The SessionFactory's {@link TypeHelper}
 	 */
 	//TypeHelper getTypeHelper();
+	
+	//===== METHODS BELOW MIGHT BE MOVED TO SessionFactoryImplementor
+	
+    /**
+     * Close the current JCR Session
+     * @param session the Session to close
+     */    
+    void releaseSession(Session session) throws JcrRuntimeException;
+	
+	/**
+	 * Close currently active session
+	 * @throws JcrRuntimeException
+	 */
+	void invalidate() throws JcrRuntimeException;
+
+	/**
+	 * Check if the SessionFactory is still opened.
+	 *
+	 * @return boolean
+	 */	
+	boolean isOpened();
 }
