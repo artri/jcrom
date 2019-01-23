@@ -28,6 +28,9 @@ public interface SessionEventListener extends Serializable {
 	public void jcrConnectionReleaseStart();
 	public void jcrConnectionReleaseEnd();
 
+	public void jcrExecuteStatementStart();
+	public void jcrExecuteStatementEnd();
+
 	public void flushStart();
 	public void flushEnd(int numberOfEntities, int numberOfCollections);
 	

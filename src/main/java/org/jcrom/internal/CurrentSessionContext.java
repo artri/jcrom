@@ -15,13 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom.context;
+package org.jcrom.internal;
 
 import java.io.Serializable;
-
-import javax.jcr.Session;
-
 import org.jcrom.JcrRuntimeException;
+import org.jcrom.Session;
 
 public interface CurrentSessionContext extends Serializable {
 	

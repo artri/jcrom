@@ -17,7 +17,8 @@
  */
 package org.jcrom;
 
-//import javax.transaction.Synchronization;
+import javax.transaction.Synchronization;
+
 
 public interface Transaction {
 
@@ -80,14 +81,14 @@ public interface Transaction {
 	 */
 	TransactionStatus getStatus();
 
-	/*
+	/**
 	 * Register a user synchronization callback for this transaction.
 	 *
 	 * @param synchronization The Synchronization callback to register.
 	 *
 	 * @throws JcrRuntimeException Indicates a problem registering the synchronization.
 	 */
-	//void registerSynchronization(Synchronization synchronization) throws JcrRuntimeException;
+	void registerSynchronization(Synchronization synchronization) throws JcrRuntimeException;
 
 	/**
 	 * Set the transaction timeout for any transaction started by a subsequent call to {@link #begin} on this instance.

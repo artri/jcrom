@@ -17,6 +17,8 @@
  */
 package org.jcrom.internal;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,15 +28,15 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import javax.jcr.observation.ObservationManager;
 
+import org.jcrom.Connection;
 import org.jcrom.EventListenerDefinition;
 import org.jcrom.FlushMode;
 import org.jcrom.JcrMappingException;
 import org.jcrom.JcrRuntimeException;
 import org.jcrom.Session;
+import org.jcrom.SessionBuilder;
 import org.jcrom.SessionEventListener;
 import org.jcrom.SessionFactory;
-import org.jcrom.context.CurrentSessionContext;
-import org.jcrom.context.internal.ThreadLocalSessionContext;
 import org.jcrom.engine.spi.SessionBuilderImplementor;
 import org.jcrom.engine.spi.SessionFactoryImplementor;
 import org.jcrom.engine.spi.SessionFactoryOptions;
@@ -42,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Jcr Session Factory. This class is just a simple wrapper around the repository which facilitates session retrieval through a central point.
+ * JCR Session Factory. This class is just a simple wrapper around the repository which facilitates session retrieval through a central point.
  * 
  * <p/>
  * The session factory is able to add event listener definitions for each session and some utility methods.
@@ -63,7 +65,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
     private String workspaceName;
     private Repository repository;
 
-    private EventListenerDefinition eventListeners[] = new EventListenerDefinition[] {};
+//    private final transient TypeHelper typeHelper;
     
     /**
      * Default Constructor
@@ -74,7 +76,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
     }
 
     public SessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions, Repository repository) {
-        this(sessionFactoryOptions, repository, null, null);
+        this(sessionFactoryOptions, repository, null);
     }
 
     public SessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions, Repository repository, Credentials credentials) {
@@ -93,6 +95,90 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
         this.currentSessionContext = buildCurrentSessionContext();
     }
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//~~~~~ SessionFactory 
+    
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#getSessionFactoryOptions()
+	 */
+	public SessionFactoryOptions getSessionFactoryOptions() {
+		return sessionFactoryOptions;
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#withOptions()
+	 */
+	@Override
+	public SessionBuilderImplementor withOptions() {
+		return new SessionBuilderImpl(this);
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#openSession()
+	 */
+	@Override
+	public Session openSession() throws JcrRuntimeException {
+		return withOptions().openSession();	
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#getCurrentSession()
+	 */
+	@Override
+	public Session getCurrentSession() throws JcrRuntimeException {
+		if (null == currentSessionContext) {
+			throw new JcrRuntimeException("No CurrentSessionContext configured!");
+		}
+		return currentSessionContext.getCurrentSession();
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#isClosed()
+	 */
+	@Override
+	public boolean isClosed() {
+		return this.isClosed;
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#isOpened()
+	 */
+	@Override
+	public boolean isOpened() {
+		return !isClosed;
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.SessionFactory#close()
+	 */
+	@Override
+	public void close() throws JcrRuntimeException {
+		LOGGER.trace("Closing SessionFactory");		
+		synchronized(this) {
+			if (isClosed) {
+				LOGGER.trace("Already closed");
+				return;
+			}
+			
+			isClosed = true;
+		}
+		
+		if (null == currentSessionContext) {
+			throw new JcrRuntimeException("No CurrentSessionContext configured!");
+		}
+		((ThreadLocalSessionContext) currentSessionContext).unbind(this);		
+	}
+	
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//~~~~~ SessionFactoryImplementor 
+	
     /**
 	 * @return the name
 	 */
@@ -109,41 +195,6 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 			this.uuid = UUID.randomUUID().toString();
 		}
 		return uuid;
-	}
-
-	/**
-	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#openSession()
-	 */
-	@Override
-	public Session openSession() throws JcrRuntimeException {
-		return withOptions().openSession();
-		LOGGER.trace("Open JCR session");
-		
-        try {
-            Session session = repository.login(credentials, workspaceName);
-            return addListeners(session);
-        } catch (RepositoryException ex) {
-        	LOGGER.error(ex.getMessage(), ex);
-            throw new JcrMappingException("Could not open Jcr Session", ex);
-        }		
-	}
-	
-	/**
-	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#getCurrentSession()
-	 */
-	@Override
-	public Session getCurrentSession() throws JcrRuntimeException {
-		if (null == currentSessionContext) {
-			throw new JcrRuntimeException("No CurrentSessionContext configured!");
-		}
-		return currentSessionContext.getCurrentSession();
-	}
-	
-	@Override
-	public SessionBuilderImplementor withOptions() {
-		return new SessionBuilderImpl(this);
 	}
 	
     /*
@@ -170,72 +221,10 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 //		((ThreadLocalSessionContext) currentSessionContext).unbind(this);
 //	}
 
-	/**
-	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#isOpened()
-	 */
-	@Override
-	public boolean isOpened() {
-		return !isClosed();
-	}
-	
-	/**
-	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#isClosed()
-	 */
-	@Override
-	public boolean isClosed() {
-		return this.isClosed;
-	}
-
-	/**
-	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#close()
-	 */
-	@Override
-	public void close() throws JcrRuntimeException {
-		synchronized(this) {
-			if (isClosed) {
-				LOGGER.trace("Already closed");
-				return;
-			}
-			
-			isClosed = true;
-		}
-		
-		LOGGER.trace("Closing SessionFactory");
-		invalidate();
-	}
 
 	private CurrentSessionContext buildCurrentSessionContext() {
 		return new ThreadLocalSessionContext(this);
 	}
-    
-    /**
-     * Hook for adding listeners to the newly returned session. We have to treat exceptions manually and can't
-     * reply on the template.
-     * @param session JCR session
-     * @return the listened session
-     * @throws javax.jcr.RepositoryException
-     */
-    private Session addListeners(Session session) throws RepositoryException {
-        if (getRepository() == null) {
-            throw new IllegalArgumentException("repository is required");
-        }
-
-        if (eventListeners != null && eventListeners.length > 0) {
-            if (!supportsObservation(getRepository())) {
-                throw new IllegalStateException("repository " + getRepositoryInfo() + " does NOT support Observation; remove Listener definitions");
-            }
-            Workspace ws = session.getWorkspace();
-            ObservationManager manager = ws.getObservationManager();
-
-            for (EventListenerDefinition eventListener : eventListeners) {
-                manager.addEventListener(eventListener.getListener(), eventListener.getEventTypes(), eventListener.getAbsPath(), eventListener.isDeep(), eventListener.getUuid(), eventListener.getNodeTypeName(), eventListener.isNoLocal());
-            }
-        }
-        return session;
-    }
 
     /**
      * @return Returns the repository.
@@ -280,20 +269,6 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
     }
 
     /**
-     * @return Returns the eventListenerDefinitions.
-     */
-    public EventListenerDefinition[] getEventListeners() {
-        return eventListeners;
-    }
-
-    /**
-     * @param eventListenerDefinitions The eventListenerDefinitions to set.
-     */
-    public void setEventListeners(EventListenerDefinition[] eventListenerDefinitions) {
-        this.eventListeners = eventListenerDefinitions;
-    }
-
-    /**
      * A toString representation of the Repository.
      * @return
      */
@@ -313,45 +288,52 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
         return "true".equals(repository.getDescriptor(Repository.OPTION_OBSERVATION_SUPPORTED));
     }
     
-    static class SessionBuilderImpl implements SessionBuilderImplementor/*, SessionCreationOptions*/ {
+    static class SessionBuilderImpl implements SessionBuilderImplementor, SessionCreationOptions {
     	private static final Logger LOGGER = LoggerFactory.getLogger(SessionBuilderImpl.class);
     	
     	private final SessionFactoryImpl sessionFactory;
+    	private Connection connection;
     	private boolean autoJoinTransactions = true;
 		private FlushMode flushMode;
 		private boolean autoClose;
 		private boolean autoClear;
 		
+		@Deprecated
 		private List<SessionEventListener> listeners;
+		private List<EventListenerDefinition> eventListeners;
 		
 		public SessionBuilderImpl(SessionFactoryImpl sessionFactory) {
 			this.sessionFactory = sessionFactory;
 			// initialize with default values
 			this.autoClose = sessionFactory.getSessionFactoryOptions().isAutoCloseSessionEnabled();
 			this.flushMode = sessionFactory.getSessionFactoryOptions().isFlushBeforeCompletionEnabled() ? FlushMode.AUTO : FlushMode.MANUAL;
+			
+			listeners = sessionFactory.getSessionFactoryOptions().getBaselineSessionEventsListenerBuilder().buildBaselineList();
+			this.listeners = new ArrayList<>();
+			List<EventListenerDefinition> eventListeners = new ArrayList<EventListenerDefinition>();
 		}
     	
-//		@Override
+		@Override
 		public boolean shouldAutoJoinTransactions() {
 			return autoJoinTransactions;
 		}
 
-//		@Override
+		@Override
 		public FlushMode getInitialSessionFlushMode() {
 			return flushMode;
 		}
 
-//		@Override
+		@Override
 		public boolean shouldAutoClose() {
 			return autoClose;
 		}
 
-//		@Override
+		@Override
 		public boolean shouldAutoClear() {
 			return autoClear;
 		}
 
-//		@Override
+		@Override
 		public Connection getConnection() {
 			return connection;
 		}
@@ -364,12 +346,103 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 			LOGGER.trace("Opening JCR Session.");
 			final SessionImpl session = new SessionImpl(sessionFactory, this);
 
-			for ( SessionEventListener listener : listeners ) {
-				session.getEventListenerManager().addListener( listener );
+			for (SessionEventListener listener : listeners) {
+				LOGGER.warn("Adding listener to a session: skipped");
+				//TODO: needs to be implemented
+//				session.getEventListenerManager().addListener(listener);
 			}
 
 			return session;
-}		
+		}
+
+	    /**
+	     * Hook for adding listeners to the newly returned session. We have to treat exceptions manually and can't
+	     * reply on the template.
+	     * @param session JCR session
+	     * @return the listened session
+	     * @throws javax.jcr.RepositoryException
+	     */
+	    private Session addListeners(Session session) throws RepositoryException {
+	        if (getRepository() == null) {
+	            throw new IllegalArgumentException("repository is required");
+	        }
+
+	        if (eventListeners != null && eventListeners.length > 0) {
+	            if (!supportsObservation(getRepository())) {
+	                throw new IllegalStateException("repository " + getRepositoryInfo() + " does NOT support Observation; remove Listener definitions");
+	            }
+	            Workspace ws = session.getWorkspace();
+	            ObservationManager manager = ws.getObservationManager();
+
+	            for (EventListenerDefinition eventListener : eventListeners) {
+	                manager.addEventListener(eventListener.getListener(), eventListener.getEventTypes(), eventListener.getAbsPath(), eventListener.isDeep(), eventListener.getUuid(), eventListener.getNodeTypeName(), eventListener.isNoLocal());
+	            }
+	        }
+	        return session;
+	    }
+	    
+		/* (non-Javadoc)
+		 * @see org.jcrom.SessionBuilder#connection(org.jcrom.Connection)
+		 */
+		@Override
+		public SessionBuilder connection(Connection connection) {
+			this.connection = connection;
+			return this;
+		}
+
+		/* (non-Javadoc)
+		 * @see org.jcrom.SessionBuilder#autoJoinTransactions(boolean)
+		 */
+		@Override
+		public SessionBuilder autoJoinTransactions(boolean autoJoinTransactions) {
+			this.autoJoinTransactions = autoJoinTransactions;
+			return this;
+		}
+
+		/* (non-Javadoc)
+		 * @see org.jcrom.SessionBuilder#autoClear(boolean)
+		 */
+		@Override
+		public SessionBuilder autoClear(boolean autoClear) {
+			this.autoClear = autoClear;
+			return this;
+		}
+
+		/* (non-Javadoc)
+		 * @see org.jcrom.SessionBuilder#flushMode(org.jcrom.FlushMode)
+		 */
+		@Override
+		public SessionBuilder flushMode(FlushMode flushMode) {
+			this.flushMode = flushMode;
+			return this;
+		}
+
+	    /**
+	     * @param eventListenerDefinitions The eventListenerDefinitions to set.
+	     */
+	    public SessionBuilder eventListeners(EventListenerDefinition... eventListenerDefinitions) {
+			Collections.addAll(this.eventListeners, eventListenerDefinitions);
+			return this;
+	    }
+	    
+		/* (non-Javadoc)
+		 * @see org.jcrom.SessionBuilder#eventListeners(org.jcrom.SessionEventListener[])
+		 */
+		@Override
+		public SessionBuilder eventListeners(SessionEventListener... listeners) {
+			Collections.addAll(this.listeners, listeners);
+			return this;
+		}
+
+		/* (non-Javadoc)
+		 * @see org.jcrom.SessionBuilder#clearEventListeners()
+		 */
+		@Override
+		public SessionBuilder clearEventListeners() {
+			listeners.clear();
+			eventListeners.clear();
+			return this;
+		}
 		
     }
 }

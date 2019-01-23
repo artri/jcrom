@@ -73,6 +73,13 @@ public interface SessionFactory extends Serializable, Closeable {
 	boolean isClosed();
 	
 	/**
+	 * Check if the SessionFactory is still opened.
+	 *
+	 * @return boolean
+	 */	
+	boolean isOpened();
+	
+	/**
 	 * Destroy this <tt>SessionFactory</tt> and release all resources (caches, connection pools, etc).
 	 * 
 	 * It is the responsibility of the application to ensure that there are no
@@ -89,25 +96,4 @@ public interface SessionFactory extends Serializable, Closeable {
 	 * @return The SessionFactory's {@link TypeHelper}
 	 */
 	//TypeHelper getTypeHelper();
-	
-	//===== METHODS BELOW MIGHT BE MOVED TO SessionFactoryImplementor
-	
-    /**
-     * Close the current JCR Session
-     * @param session the Session to close
-     */    
-    void releaseSession(Session session) throws JcrRuntimeException;
-	
-	/**
-	 * Close currently active session
-	 * @throws JcrRuntimeException
-	 */
-	void invalidate() throws JcrRuntimeException;
-
-	/**
-	 * Check if the SessionFactory is still opened.
-	 *
-	 * @return boolean
-	 */	
-	boolean isOpened();
 }

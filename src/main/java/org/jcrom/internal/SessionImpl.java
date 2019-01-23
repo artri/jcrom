@@ -18,13 +18,16 @@
 package org.jcrom.internal;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.UUID;
 
 import org.jcrom.FlushMode;
 import org.jcrom.JcrRuntimeException;
 import org.jcrom.Session;
+import org.jcrom.SessionEventListener;
 import org.jcrom.SessionFactory;
 import org.jcrom.Transaction;
+import org.jcrom.engine.spi.SessionFactoryImplementor;
 import org.jcrom.engine.spi.SessionImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,54 +53,31 @@ public class SessionImpl implements SessionImplementor {
 	private boolean waitingForAutoClose;
 	private boolean closed;
 	
+	private boolean autoClear;
+	private boolean autoClose;
+	private transient boolean disallowOutOfTransactionUpdateOperations;
+	private transient boolean discardOnClose;
+	
 	public SessionImpl(SessionFactoryImpl sessionFactory, SessionCreationOptions options) {
 		this.sessionFactory = sessionFactory;
 		this.flushMode = FlushMode.AUTO;
+		this.autoClear = options.shouldAutoClear();
+		this.autoClose = options.shouldAutoClose();
+		this.disallowOutOfTransactionUpdateOperations = !sessionFactory.getSessionFactoryOptions().isAllowOutOfTransactionUpdateOperations();
+		this.discardOnClose = sessionFactory.getSessionFactoryOptions().isReleaseResourcesOnCloseEnabled();
+		
+		// getTransactionCoordinator().pulse();
 	}
 
-	@Override
-	public SessionFactory getSessionFactory() {
-		return this.sessionFactory;
-	}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//~~~~~~~~~~ SharedSessionContract
 	
 	/**
-	 * @return the uuid
-	 */
-	public String getUUID() {
-		if (null == this.uuid) {
-			// lazy initialization
-			this.uuid = UUID.randomUUID().toString();
-		}
-		return uuid;
-	}
-
+	 * (non-Javadoc)
+	 * @see org.jcrom.Session#JcrRuntimeException()
+	 */	
 	@Override
-	public boolean isOpened() {
-		return !isClosed();
-	}
-
-	@Override
-	public boolean isClosed() {
-		return closed || sessionFactory.isClosed();
-	}
-
-	@Override
-	public boolean isOpenOrWaitingForAutoClose() {
-		return !isClosed() || waitingForAutoClose;
-	}
-	
-	@Override
-	public void checkOpen(boolean markForRollbackIfClosed) {
-		if (isClosed()) {
-			if (markForRollbackIfClosed /*&& transactionCoordinator.isTransactionActive()*/ ) {
-				markForRollbackOnly();
-			}
-			throw new IllegalStateException( "Session is closed" );
-		}
-	}
-	
-	@Override
-	public void close() throws IOException {
+	public void close() throws JcrRuntimeException {
 		if (closed && !waitingForAutoClose) {
 			LOGGER.trace("Already closed");
 			return;
@@ -112,16 +92,77 @@ public class SessionImpl implements SessionImplementor {
 		setClosed();
 	}
 	
-	protected void setClosed() {
-		closed = true;
-		waitingForAutoClose = false;
-		cleanupOnClose();
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.Session#isOpened()
+	 */		
+	@Override
+	public boolean isOpened() {
+		checkSessionFactoryOpen();
+		pulseTransactionCoordinator();
+		try {
+			return !isClosed();
+		} catch(JcrRuntimeException e) {
+			throw e;
+		}
+	}
+
+	protected void checkSessionFactoryOpen() {
+		if (!getSessionFactory().isOpened()) {
+			LOGGER.debug("Forcing Session closed as SessionFactory has been closed");
+			setClosed();
+		}
 	}
 	
-	protected void cleanupOnClose() {
-		// nothing to do in base impl, here for SessionImpl hook
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.Session#isClosed()
+	 */
+	@Override
+	public boolean isClosed() {
+		return closed || sessionFactory.isClosed();
 	}
 	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.Session#beginTransaction()
+	 */	
+	@Override
+	public Transaction beginTransaction() {
+		checkOpen();
+		
+		Transaction transaction = getTransaction();
+		transaction.begin();
+		return transaction;
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.Session#getTransaction()
+	 */	
+	@Override
+	public Transaction getTransaction() {
+		return accessTransaction();
+	}
+	
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//~~~~~~~~~~ Session 	
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.Session#getSessionFactory()
+	 */	
+	@Override
+	public SessionFactoryImplementor getSessionFactory() {
+		return this.sessionFactory;
+	}
+
+	@Override
+	public void flush() throws JcrRuntimeException {
+		checkOpen();
+		doFlush();
+	}
+
 	@Override
 	public void clear() {
 		checkOpen();
@@ -137,23 +178,7 @@ public class SessionImpl implements SessionImplementor {
 			throw new JcrRuntimeException(e);
 		}
 	}
-
-	private void internalClear() {
-//		persistenceContext.clear();
-//		actionQueue.clear();
-//
-//		final ClearEvent event = new ClearEvent(this);
-//		for (ClearEventListener listener : listeners(EventType.CLEAR) ) {
-//			listener.onClear( event );
-//		}
-	}
 	
-	@Override
-	public void flush() throws JcrRuntimeException {
-		checkOpen();
-		doFlush();
-	}
-
 	@Override
 	public void setFlushMode(FlushMode flushMode) {
 		checkOpen();
@@ -164,14 +189,125 @@ public class SessionImpl implements SessionImplementor {
 	public FlushMode getFlushMode() {
 		return flushMode;
 	}
+		
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.Session#isDirty()
+	 */
+	@Override
+	public boolean isDirty() throws JcrRuntimeException {
+		checkOpen();
+		LOGGER.debug("Checking session dirtiness");
+		if (actionQueue.areInsertionsOrDeletionsQueued() ) {
+			log.debug( "Session dirty (scheduled updates and insertions)" );
+			return true;
+		}
+		DirtyCheckEvent event = new DirtyCheckEvent( this );
+		for (DirtyCheckEventListener listener : listeners(EventType.DIRTY_CHECK)) {
+			listener.onDirtyCheck(event);
+		}
+		return event.isDirty();
+	}
+
+	@Override
+	public boolean isDefaultReadOnly() {
+		return persistenceContext.isDefaultReadOnly();
+	}
+
+	@Override
+	public void setDefaultReadOnly(boolean defaultReadOnly) {
+		persistenceContext.setDefaultReadOnly( defaultReadOnly );
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.Session#addEventListeners()
+	 */		
+	@Override
+	public void addEventListeners(SessionEventListener... listeners) {
+		getEventListenerManager().addListener( listeners );
+	}	
+	
+	// not for internal use:
+	@Override
+	public Serializable getIdentifier(Object object) throws JcrRuntimeException {
+		checkOpen();
+		checkTransactionSynchStatus();
+		if (object instanceof HibernateProxy) {
+			LazyInitializer li = ( (HibernateProxy) object ).getHibernateLazyInitializer();
+			if ( li.getSession() != this ) {
+				throw new TransientObjectException( "The proxy was not associated with this session" );
+			}
+			return li.getIdentifier();
+		}
+		else {
+			EntityEntry entry = persistenceContext.getEntry( object );
+			if ( entry == null ) {
+				throw new TransientObjectException( "The instance was not associated with this session" );
+			}
+			return entry.getId();
+		}
+	}	
 	
 	@Override
-	public Transaction beginTransaction() {
+	public boolean isReadOnly(Object entityOrProxy) {
 		checkOpen();
-		
-		Transaction transaction = getTransaction();
-		transaction.begin();
-		return transaction;
+//		return persistenceContext.isReadOnly(entityOrProxy);
+		LOGGER.warn("persistenceContext.isReadOnly not implemented yet");
+		return false;
+	}
+
+	@Override
+	public void setReadOnly(Object entity, boolean readOnly) {
+		checkOpen();
+		//persistenceContext.setReadOnly(entity, readOnly);
+		LOGGER.warn("persistenceContext.setReadOnly not implemented yet");
+	}
+	
+	/**
+	 * @return the uuid
+	 */
+	public String getUUID() {
+		if (null == this.uuid) {
+			// lazy initialization
+			this.uuid = UUID.randomUUID().toString();
+		}
+		return uuid;
+	}
+
+	@Override
+	public boolean isOpenOrWaitingForAutoClose() {
+		return !isClosed() || waitingForAutoClose;
+	}
+	
+	@Override
+	public void checkOpen(boolean markForRollbackIfClosed) {
+		if (isClosed()) {
+			if (markForRollbackIfClosed /*&& transactionCoordinator.isTransactionActive()*/ ) {
+				markForRollbackOnly();
+			}
+			throw new IllegalStateException("Session is closed");
+		}
+	}
+	
+	protected void setClosed() {
+		closed = true;
+		waitingForAutoClose = false;
+		cleanupOnClose();
+	}
+	
+	protected void cleanupOnClose() {
+		// nothing to do in base impl, here for SessionImpl hook
+	}
+
+	private void internalClear() {
+//		persistenceContext.clear();
+//		actionQueue.clear();
+//
+//		final ClearEvent event = new ClearEvent(this);
+//		for (ClearEventListener listener : listeners(EventType.CLEAR) ) {
+//			listener.onClear( event );
+//		}
 	}
 
 	@Override
@@ -182,26 +318,28 @@ public class SessionImpl implements SessionImplementor {
 	}
 	
 	@Override
+	public long getTransactionStartTimestamp() {
+		//return getCacheTransactionSynchronization().getCurrentTransactionStartTimestamp();
+		throw new UnsupportedOperationException("Not implemented yet");
+	}
+	
+	@Override
 	public boolean isTransactionInProgress() {
-		if ( waitingForAutoClose ) {
+		if (waitingForAutoClose) {
 			return getSessionFactory().isOpened() /*&& transactionCoordinator.isTransactionActive()*/;
 		}
 		return !isClosed() /*&& transactionCoordinator.isTransactionActive()*/;
 	}
 	
 	@Override
-	public Transaction getTransaction() {
-		return accessTransaction();
-	}
-
-	@Override
 	public Transaction accessTransaction() {	
 		if (null == this.currentJcrTransaction) {
 			this.currentJcrTransaction = new TransactionImpl(this);
 		}
 		
-		if (isOpened() || (waitingForAutoClose && getSessionFactory().isOpened())) {
-			pulseTransactionCoordinator();
+		if (!isClosed() || (waitingForAutoClose && getSessionFactory().isOpened())) {
+			LOGGER.warn("transactionCoordinator.pulse() not implemented yet");
+			//transactionCoordinator.pulse();
 		}
 		return this.currentJcrTransaction;
 	}
@@ -212,6 +350,7 @@ public class SessionImpl implements SessionImplementor {
 	
 	protected void pulseTransactionCoordinator() {
 		if (!isClosed()) {
+			LOGGER.warn("transactionCoordinator.pulse() not implemented yet");
 			//transactionCoordinator.pulse();
 		}
 	}

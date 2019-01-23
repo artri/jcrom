@@ -1,5 +1,7 @@
 package org.jcrom.engine.spi;
 
+import org.jcrom.cfg.BaselineSessionEventsListenerBuilder;
+
 public interface SessionFactoryOptions {
 	/**
 	 * Get the UUID unique to this SessionFactoryOptions.  Will be the
@@ -27,5 +29,7 @@ public interface SessionFactoryOptions {
 	
 	boolean isFlushBeforeCompletionEnabled();
 
-	boolean isAutoCloseSessionEnabled();	
+	boolean isAutoCloseSessionEnabled();
+	
+	BaselineSessionEventsListenerBuilder getBaselineSessionEventsListenerBuilder();	
 }

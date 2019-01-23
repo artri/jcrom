@@ -21,7 +21,8 @@ import java.io.Closeable;
 import java.io.Serializable;
 
 public interface Session extends Serializable, AutoCloseable, Closeable {
-	//===== SharedSessionContract =====
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//~~~~~~~~~~ SharedSessionContract
 	
 	/**
 	 * End this <tt>Session</tt> by releasing the JCR connection and cleaning up.
@@ -63,7 +64,8 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 */
 	Transaction getTransaction();
 	
-	//===== Session =====
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//~~~~~~~~~~ Session 
 	
 	/**
 	 * Get the session factory which created this session.
@@ -158,6 +160,13 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	void setDefaultReadOnly(boolean readOnly);	
 	
 	/**
+	 * Add one or more listeners to the Session
+	 *
+	 * @param listeners The listener(s) to add
+	 */
+	void addEventListeners(SessionEventListener... listeners);
+	
+	/**
 	 * Return the identifier value of the given entity as associated with this
 	 * session.  An exception is thrown if the given entity instance is transient
 	 * or detached in relation to this session.
@@ -167,7 +176,7 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 * @throws TransientObjectException if the instance is transient or associated with
 	 * a different session
 	 */
-	Serializable getIdentifier(Object object);	
+	Serializable getIdentifier(Object object);
 	
 	/**
 	 * Is the specified entity or proxy read-only?
@@ -199,10 +208,6 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 */
 	void setReadOnly(Object entityOrProxy, boolean readOnly);
 	
-	
-	//===== METHODS BELOW MIGHT BE MOVED TO SessionImplementor
-
-	
 	/*
 	 * Convenience access to the {@link TypeHelper} associated with this session's {@link SessionFactory}.
 	 * <p/>
@@ -211,11 +216,4 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 * @return The {@link TypeHelper} associated with this session's {@link SessionFactory}
 	 */
 	//TypeHelper getTypeHelper();
-	
-	/**
-	 * Add one or more listeners to the Session
-	 *
-	 * @param listeners The listener(s) to add
-	 */
-	void addEventListeners(SessionEventListener... listeners);
 }
