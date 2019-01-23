@@ -21,6 +21,7 @@ import java.io.Closeable;
 import java.io.Serializable;
 
 import org.jcrom.engine.spi.SessionFactoryOptions;
+import org.jcrom.type.TypeHandler;
 
 /**
  * Session Factory interface. This interface describes a simplfied contract for retrieving a session.
@@ -33,7 +34,7 @@ public interface SessionFactory extends Serializable, Closeable {
 	 *
 	 * @return The special options used to build the factory.
 	 */
-	SessionFactoryOptions getSessionFactoryOptions();
+	SessionFactoryOptions getOptions();
 	
 	/**
 	 * Obtain a {@link Session} builder.
@@ -90,10 +91,10 @@ public interface SessionFactory extends Serializable, Closeable {
 	 */
 	void close() throws JcrRuntimeException;	
 	
-	/*
-	 * Retrieve this SessionFactory's {@link TypeHelper}.
+	/**
+	 * Retrieve this SessionFactory's {@link TypeHandler}.
 	 *
-	 * @return The SessionFactory's {@link TypeHelper}
+	 * @return The SessionFactory's {@link TypeHandler}
 	 */
-	//TypeHelper getTypeHelper();
+	TypeHandler getTypeHandler();
 }

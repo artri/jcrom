@@ -17,29 +17,43 @@
  */
 package org.jcrom.internal;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.jcr.Credentials;
+import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import javax.jcr.observation.ObservationManager;
 
+import org.jcrom.AnnotationReader;
 import org.jcrom.Connection;
 import org.jcrom.EventListenerDefinition;
 import org.jcrom.FlushMode;
 import org.jcrom.JcrMappingException;
 import org.jcrom.JcrRuntimeException;
+import org.jcrom.Jcrom;
+import org.jcrom.Mapper;
+import org.jcrom.ReflectionAnnotationReader;
 import org.jcrom.Session;
 import org.jcrom.SessionBuilder;
 import org.jcrom.SessionEventListener;
 import org.jcrom.SessionFactory;
+import org.jcrom.Validator;
 import org.jcrom.engine.spi.SessionBuilderImplementor;
 import org.jcrom.engine.spi.SessionFactoryImplementor;
 import org.jcrom.engine.spi.SessionFactoryOptions;
+import org.jcrom.type.DefaultTypeHandler;
+import org.jcrom.type.JavaFXTypeHandler;
+import org.jcrom.type.TypeHandler;
+import org.jcrom.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,19 +67,24 @@ import org.slf4j.LoggerFactory;
  */
 public class SessionFactoryImpl implements SessionFactoryImplementor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionFactoryImpl.class);
+	private static final String JAVAFX_OBJECT_PROPERTY_CLASS = "javafx.beans.property.ObjectProperty";
 	
 	private String name;
 	private String uuid;
 	
-	private transient volatile boolean isClosed;
-	private final transient SessionFactoryOptions sessionFactoryOptions;
-	private final transient CurrentSessionContext currentSessionContext;
+	private volatile boolean isClosed;
+	
+	private final SessionFactoryOptions options;
+	private final CurrentSessionContext currentSessionContext;
 	
     private Credentials credentials;
     private String workspaceName;
     private Repository repository;
 
-//    private final transient TypeHelper typeHelper;
+    private TypeHandler typeHandler;
+    private Mapper mapper;
+    private Validator validator;
+    private AnnotationReader annotationReader;
     
     /**
      * Default Constructor
@@ -83,29 +102,75 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
         this(sessionFactoryOptions, repository, credentials, null);
     }
 
-    public SessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions, Repository repository, Credentials credentials, String workspaceName) {
-    	this.sessionFactoryOptions = sessionFactoryOptions;
-    	this.name = sessionFactoryOptions.getSessionFactoryName();
-    	this.uuid = sessionFactoryOptions.getUUID();
+    public SessionFactoryImpl(SessionFactoryOptions options, Repository repository, Credentials credentials, String workspaceName) {
+    	this.options = options;
+    	this.name = options.getSessionFactoryName();
+    	this.uuid = options.getUUID();
     	
         this.repository = repository;
         this.credentials = credentials;
         this.workspaceName = workspaceName;
         
         this.currentSessionContext = buildCurrentSessionContext();
+        
+        this.typeHandler = getDefaultTypeHandler();
+        this.mapper = new Mapper(this);
+        this.validator = new Validator(this);
+        this.annotationReader = new ReflectionAnnotationReader();
     }
 
+    private static TypeHandler getDefaultTypeHandler() {
+        Class<?> clazz = null;
+        try {
+            // Try to find a Java FX class. If found, uses the JavaFXTypeHandler class
+            clazz = Class.forName(JAVAFX_OBJECT_PROPERTY_CLASS);
+        } catch (Exception e) {
+        	LOGGER.error(e.getMessage(), e);
+        }
+        return clazz == null ? new DefaultTypeHandler() : new JavaFXTypeHandler();
+    }
+    
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//~~~~~ SessionFactory 
     
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#getSessionFactoryOptions()
+	 * @see org.jcrom.SessionFactory#getOptions()
 	 */
-	public SessionFactoryOptions getSessionFactoryOptions() {
-		return sessionFactoryOptions;
+	public SessionFactoryOptions getOptions() {
+		return options;
 	}
 
+	public TypeHandler getTypeHandler() {
+		return this.typeHandler;
+	}
+	
+	public void setTypeHandler(TypeHandler typeHandler) {
+		this.typeHandler = typeHandler;
+	}
+		
+    /**
+	 * @return the mapper
+	 */
+	public Mapper getMapper() {
+		return mapper;
+	}
+
+	/**
+	 * @param mapper the mapper to set
+	 */
+	public void setMapper(Mapper mapper) {
+		this.mapper = mapper;
+	}
+
+	public AnnotationReader getAnnotationReader() {
+        return annotationReader;
+    }
+    
+    public void setAnnotationReader(AnnotationReader annotationReader) {
+        this.annotationReader = annotationReader;
+    }
+	
 	/**
 	 * (non-Javadoc)
 	 * @see org.jcrom.SessionFactory#withOptions()
@@ -176,6 +241,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 		((ThreadLocalSessionContext) currentSessionContext).unbind(this);		
 	}
 	
+	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//~~~~~ SessionFactoryImplementor 
 	
@@ -190,10 +256,6 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 	 * @return the uuid
 	 */
 	public String getUUID() {
-		if (null == this.uuid) {
-			// lazy initialization
-			this.uuid = UUID.randomUUID().toString();
-		}
 		return uuid;
 	}
 	
@@ -284,6 +346,128 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
         return sb.toString();
     }
 
+    /**
+     * Add a class that this instance can map to/from JCR nodes. This method will validate the class, and all mapped
+     * JcrEntity implementations referenced from this class.
+     * 
+     * @param entityClass the class that will be mapped
+     * @return the Jcrom instance
+     */
+    public synchronized void map(Class<?> entityClass) {
+        if (!mapper.isMapped(entityClass)) {
+            Set<Class<?>> validClasses = validator.validate(entityClass, mapper.isDynamicInstantiation());
+            for (Class<?> c : validClasses) {
+                mapper.addMappedClass(c);
+            }
+        }
+    }
+
+    public synchronized void map(Collection<Class<?>> classesToMap) {
+        for (Class<?> c : classesToMap) {
+            map(c);
+        }    	
+    }
+    
+    /**
+     * Tries to map all classes in the package specified. Fails if one of the classes is not valid for mapping.
+     * 
+     * @param packageName the name of the package to process
+     * @return the Jcrom instance
+     */
+    public synchronized void mapPackage(String packageName) {
+        mapPackage(packageName, false);
+    }
+
+    /**
+     * Tries to map all classes in the package specified.
+     * 
+     * @param packageName the name of the package to process
+     * @param ignoreInvalidClasses specifies whether to ignore classes in the package that cannot be mapped
+     * @return the Jcrom instance
+     */
+    public synchronized void mapPackage(String packageName, boolean ignoreInvalidClasses) {
+        try {
+            for (Class<?> c : ReflectionUtils.getClasses(packageName)) {
+                try {
+                    // Ignore Enum because these are not entities
+                    // Can be useful if there is an inner Enum
+                    if (!c.isEnum()) {
+                        map(c);
+                    }
+                } catch (JcrMappingException ex) {
+                    if (!ignoreInvalidClasses) {
+                        throw ex;
+                    }
+                }
+            }
+        } catch (IOException ioex) {
+            throw new JcrMappingException("Could not get map classes from package " + packageName, ioex);
+        } catch (ClassNotFoundException cnfex) {
+            throw new JcrMappingException("Could not get map classes from package " + packageName, cnfex);
+        }
+    }
+
+    /**
+     * Get a set of all classes that are mapped by this instance.
+     * 
+     * @return all classes that are mapped by this instance
+     */
+    public Set<Class<?>> getMappedClasses() {
+        return Collections.unmodifiableSet(mapper.getMappedClasses());
+    }
+
+    /**
+     * Check whether a specific class is mapped by this instance.
+     * 
+     * @param entityClass the class we want to check
+     * @return true if the class is mapped, else false
+     */
+    public boolean isMapped(Class<?> entityClass) {
+        return mapper.isMapped(entityClass);
+    }
+
+    public String getName(Object object) throws JcrMappingException {
+        try {
+            return mapper.getNodeName(object);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not get node name from object", e);
+        }
+    }
+
+    public String getPath(Object object) throws JcrMappingException {
+        try {
+            return mapper.getNodePath(object);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not get node path from object", e);
+        }
+    }
+
+    public Object getParentObject(Object childObject) throws JcrMappingException {
+        try {
+            return mapper.getParentObject(childObject);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not get parent object with Annotation JcrParentNode from child object", e);
+        }
+    }
+
+    public String getChildContainerPath(Object childObject, Object parentObject, Node parentNode) {
+        try {
+            return mapper.getChildContainerNodePath(childObject, parentObject, parentNode);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not get child object with Annotation @JcrChildNode and with the type '" + childObject.getClass() + "' from parent object", e);
+        } catch (RepositoryException e) {
+            throw new JcrMappingException("Could not get child object with Annotation @JcrChildNode and with the type '" + childObject.getClass() + "' from parent object", e);
+        }
+    }
+
+    public void setBaseVersionInfo(Object object, String name, Calendar created) throws JcrMappingException {
+        try {
+            mapper.setBaseVersionInfo(object, name, created);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not set base version info on object", e);
+        }
+    }
+    
     private static boolean supportsObservation(Repository repository) {
         return "true".equals(repository.getDescriptor(Repository.OPTION_OBSERVATION_SUPPORTED));
     }
@@ -305,10 +489,10 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 		public SessionBuilderImpl(SessionFactoryImpl sessionFactory) {
 			this.sessionFactory = sessionFactory;
 			// initialize with default values
-			this.autoClose = sessionFactory.getSessionFactoryOptions().isAutoCloseSessionEnabled();
-			this.flushMode = sessionFactory.getSessionFactoryOptions().isFlushBeforeCompletionEnabled() ? FlushMode.AUTO : FlushMode.MANUAL;
+			this.autoClose = sessionFactory.getOptions().isAutoCloseSessionEnabled();
+			this.flushMode = sessionFactory.getOptions().isFlushBeforeCompletionEnabled() ? FlushMode.AUTO : FlushMode.MANUAL;
 			
-			listeners = sessionFactory.getSessionFactoryOptions().getBaselineSessionEventsListenerBuilder().buildBaselineList();
+			listeners = sessionFactory.getOptions().getBaselineSessionEventsListenerBuilder().buildBaselineList();
 			this.listeners = new ArrayList<>();
 			List<EventListenerDefinition> eventListeners = new ArrayList<EventListenerDefinition>();
 		}
@@ -443,6 +627,5 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 			eventListeners.clear();
 			return this;
 		}
-		
     }
 }

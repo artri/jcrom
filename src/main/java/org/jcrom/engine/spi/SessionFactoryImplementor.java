@@ -1,5 +1,7 @@
 package org.jcrom.engine.spi;
 
+import org.jcrom.AnnotationReader;
+import org.jcrom.Mapper;
 import org.jcrom.SessionFactory;
 
 public interface SessionFactoryImplementor extends SessionFactory {
@@ -20,4 +22,13 @@ public interface SessionFactoryImplementor extends SessionFactory {
 	
 	@Override
 	SessionBuilderImplementor withOptions();
+	
+	/**
+	 * Retrieve this SessionFactory's {@link AnnotationReader}.
+	 *
+	 * @return The SessionFactory's {@link AnnotationReader}
+	 */	
+	AnnotationReader getAnnotationReader();
+	
+	Mapper getMapper();	
 }

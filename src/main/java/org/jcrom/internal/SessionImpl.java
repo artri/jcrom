@@ -21,14 +21,26 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.UUID;
 
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+
 import org.jcrom.FlushMode;
+import org.jcrom.JcrMappingException;
 import org.jcrom.JcrRuntimeException;
+import org.jcrom.Mapper;
 import org.jcrom.Session;
 import org.jcrom.SessionEventListener;
 import org.jcrom.SessionFactory;
 import org.jcrom.Transaction;
+import org.jcrom.annotations.JcrNode;
+import org.jcrom.callback.JcromCallback;
 import org.jcrom.engine.spi.SessionFactoryImplementor;
 import org.jcrom.engine.spi.SessionImplementor;
+import org.jcrom.type.TypeHandler;
+import org.jcrom.util.NodeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -234,16 +246,16 @@ public class SessionImpl implements SessionImplementor {
 		checkOpen();
 		checkTransactionSynchStatus();
 		if (object instanceof HibernateProxy) {
-			LazyInitializer li = ( (HibernateProxy) object ).getHibernateLazyInitializer();
-			if ( li.getSession() != this ) {
-				throw new TransientObjectException( "The proxy was not associated with this session" );
+			LazyInitializer li = ((HibernateProxy) object).getHibernateLazyInitializer();
+			if (li.getSession() != this) {
+				throw new TransientObjectException("The proxy was not associated with this session");
 			}
 			return li.getIdentifier();
 		}
 		else {
-			EntityEntry entry = persistenceContext.getEntry( object );
+			EntityEntry entry = persistenceContext.getEntry(object);
 			if ( entry == null ) {
-				throw new TransientObjectException( "The instance was not associated with this session" );
+				throw new TransientObjectException("The instance was not associated with this session");
 			}
 			return entry.getId();
 		}
@@ -378,4 +390,209 @@ public class SessionImpl implements SessionImplementor {
 			throw new TransactionRequiredException( "no transaction is in progress" );
 		}
 	}
+	
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+	public Mapper getMapper() {
+        return getSessionFactory().getMapper();
+    }
+	
+    /**
+     * Maps the node supplied to an instance of the entity class. Loads all child nodes, to infinite depth.
+     * 
+     * @param entityClass the class of the entity to be instantiated from the node (in the case of dynamic instantiation, the instance class may be read from the document, but will be cast to this class)
+     * @param node the JCR node from which to create the object
+     * @return an instance of the JCR entity class, mapped from the node
+     * @throws JcrMappingException
+     */
+    public <T> T fromNode(Class<T> entityClass, Node node) throws JcrMappingException {
+        return fromNode(entityClass, node, null);
+    }
+
+    /**
+     * Maps the node supplied to an instance of the entity class.
+     * 
+     * @param entityClass the class of the entity to be instantiated from the node (in the case of dynamic instantiation, the instance class may be read from the document, but will be cast to this class)
+     * @param node the JCR node from which to create the object
+     * @param nodeFilter the NodeFilter to apply when loading child nodes and references
+     * @return an instance of the JCR entity class, mapped from the node
+     * @throws JcrMappingException
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T fromNode(Class<T> entityClass, Node node, NodeFilter nodeFilter) throws JcrMappingException {
+        if (!getMapper().isDynamicInstantiation() && !getMapper().isMapped(entityClass)) {
+            throw new JcrMappingException("Trying to map to an unmapped class: " + entityClass.getName());
+        }
+        try {
+            return (T) getMapper().fromNodeWithParent(entityClass, node, nodeFilter);
+        } catch (ClassNotFoundException e) {
+            throw new JcrMappingException("Could not map Object from node", e);
+        } catch (InstantiationException e) {
+            throw new JcrMappingException("Could not map Object from node", e);
+        } catch (RepositoryException e) {
+            throw new JcrMappingException("Could not map Object from node", e);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not map Object from node", e);
+        } catch (IOException e) {
+            throw new JcrMappingException("Could not map Object from node", e);
+        } finally {
+        	getMapper().clearHistory();
+        }
+    }
+
+    /**
+     * Maps the entity supplied to a JCR node, and adds that node as a child to the parent node supplied.
+     * 
+     * @param parentNode the parent node to which the entity node will be added
+     * @param entity the entity to be mapped to the JCR node
+     * @return the newly created JCR node
+     * @throws JcrMappingException
+     */
+    public Node addNode(Node parentNode, Object entity) throws JcrMappingException {
+        return addNode(parentNode, entity, null);
+    }
+
+    /**
+     * Maps the entity supplied to a JCR node, and adds that node as a child to the parent node supplied.
+     * 
+     * @param parentNode the parent node to which the entity node will be added
+     * @param entity the entity to be mapped to the JCR node
+     * @param mixinTypes an array of mixin type that will be added to the new node
+     * @return the newly created JCR node
+     * @throws JcrMappingException
+     */
+    public Node addNode(Node parentNode, Object entity, String[] mixinTypes) throws JcrMappingException {
+        return addNode(parentNode, entity, mixinTypes, null);
+    }
+
+    /**
+     * Maps the entity supplied to a JCR node, and adds that node as a child to the parent node supplied.
+     * 
+     * @param parentNode the parent node to which the entity node will be added
+     * @param entity the entity to be mapped to the JCR node
+     * @param mixinTypes an array of mixin type that will be added to the new node
+     * @param action callback object that specifies the Jcrom actions: 
+     *     <ul>
+     *       <li>{@link JcromCallback#doAddNode(Node, String, JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doAddMixinTypes(Node, String[], JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doAddClassNameToProperty(Node, JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doComplete(Object, Node)},</li>
+     *     </ul>
+     * @return the newly created JCR node
+     * @throws JcrMappingException
+     * @since 2.1.0
+     */
+    public Node addNode(Node parentNode, Object entity, String[] mixinTypes, JcromCallback action) throws JcrMappingException {
+        if (!getMapper().isMapped(entity.getClass())) {
+            throw new JcrMappingException("Trying to map an unmapped class: " + entity.getClass().getName());
+        }
+        try {
+            return getMapper().addNode(parentNode, entity, mixinTypes, action);
+        } catch (RepositoryException e) {
+            throw new JcrMappingException("Could not create node from object", e);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not create node from object", e);
+        } catch (IOException e) {
+            throw new JcrMappingException("Could not create node from object", e);
+        } finally {
+        	getMapper().clearHistory();
+        }
+    }
+
+    /**
+     * Update an existing JCR node with the entity supplied.
+     * 
+     * @param node the JCR node to be updated
+     * @param entity the entity that will be mapped to the existing node
+     * @return the updated node
+     * @throws JcrMappingException
+     */
+    public Node updateNode(Node node, Object entity) throws JcrMappingException {
+        return updateNode(node, entity, null, null);
+    }
+
+    /**
+     * Update an existing JCR node with the entity supplied.
+     * 
+     * @param node the JCR node to be updated
+     * @param entity the entity that will be mapped to the existing node
+     * @param nodeFilter the NodeFilter to apply when updating child nodes and references
+     * @return the updated node
+     * @throws JcrMappingException
+     */
+    public Node updateNode(Node node, Object entity, NodeFilter nodeFilter) throws JcrMappingException {
+        return updateNode(node, entity, nodeFilter, null);
+    }
+
+    /**
+     * Update an existing JCR node with the entity supplied.
+     * 
+     * @param node the JCR node to be updated
+     * @param entity the entity that will be mapped to the existing node
+     * @param nodeFilter the NodeFilter to apply when updating child nodes and references
+     * @param action callback object that specifies the Jcrom actions: 
+     *     <ul>
+     *       <li>{@link JcromCallback#doUpdateClassNameToProperty(Node, JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doMoveNode(Node, Node, String, JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doComplete(Object, Node)},</li>
+     *     </ul>
+     * @return the updated node
+     * @throws JcrMappingException
+     * @since 2.1.0
+     */
+    public Node updateNode(Node node, Object entity, NodeFilter nodeFilter, JcromCallback action) throws JcrMappingException {
+
+        if (!getMapper().isMapped(entity.getClass())) {
+            throw new JcrMappingException("Trying to map an unmapped class: " + entity.getClass().getName());
+        }
+        try {
+            return getMapper().updateNode(node, entity, nodeFilter, action);
+        } catch (RepositoryException e) {
+            throw new JcrMappingException("Could not update node from object", e);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not update node from object", e);
+        } catch (IOException e) {
+            throw new JcrMappingException("Could not update node from object", e);
+        } finally {
+        	getMapper().clearHistory();
+        }
+    }
+   
+    public void logNodeInfos(Node node) throws RepositoryException {
+    	if (!LOGGER.isInfoEnabled()) {
+    		return;
+    	}
+        for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
+            Property p = iter.nextProperty();
+            if (p.isMultiple()) {
+                for (Value value : p.getValues()) {
+                    LOGGER.info("{} = {}", p.getName(), value.getString());
+                }
+            } else {
+            	LOGGER.info("{} = {}", p.getName(), p.getValue().getString());
+            }
+        }
+        for (PropertyIterator iter = node.getReferences(); iter.hasNext();) {
+            Property p = iter.nextProperty();
+            if (p.isMultiple()) {
+                for (Value value : p.getValues()) {
+                	LOGGER.info("{} = {}", p.getName(), value.getString());
+                }
+            } else {
+            	LOGGER.info("{} = {}", p.getName(), p.getValue().getString());
+            }
+        }
+        for (PropertyIterator iter = node.getWeakReferences(); iter.hasNext();) {
+            Property p = iter.nextProperty();
+            if (p.isMultiple()) {
+                for (Value value : p.getValues()) {
+                	LOGGER.info("{} = {}", p.getName(), value.getString());
+                }
+            } else {
+            	LOGGER.info("{} = {}", p.getName(), p.getValue().getString());
+            }
+        }
+    }	
 }
