@@ -15,49 +15,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom;
+package org.jcrom.loader;
+
+import java.lang.reflect.Field;
 
 import javax.jcr.Node;
-import javax.jcr.Session;
 
-import org.jcrom.annotations.JcrFileNode;
+import org.jcrom.Session;
+import org.jcrom.mapping.Mapper;
 import org.jcrom.util.NodeFilter;
-import org.jcrom.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Handles lazy loading of single file node.
+ * Handles lazy loading of single reference.
  * 
  * @author Olafur Gauti Gudmundsson
  * @author Nicolas Dos Santos
  */
-public class FileNodeLoader extends AbstractLazyLoader {
+class ReferenceLoader extends AbstractLazyLoader {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(FileNodeLoader.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ReferenceLoader.class);
 
-    private final Class<?> objectClass;
-    private final String fileContainerPath;
+    private final Class<?> objClass;
     private final Object parentObject;
-    private final JcrFileNode jcrFileNode;
+    private final String nodePath;
+    private final String propertyName;
     private final int depth;
     private final NodeFilter nodeFilter;
+    private final Field field;
 
-    FileNodeLoader(Class<?> objectClass, Object parentObject, String fileContainerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
+    ReferenceLoader(Class<?> objClass, Object parentObject, String nodePath, String propertyName, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
         super(mapper);
-        this.objectClass = objectClass;
+        this.objClass = objClass;
         this.parentObject = parentObject;
-        this.jcrFileNode = jcrFileNode;
-        this.fileContainerPath = fileContainerPath;
+        this.nodePath = nodePath;
+        this.propertyName = propertyName;
         this.depth = depth;
         this.nodeFilter = nodeFilter;
+        this.field = field;
     }
 
     @Override
     protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
-    	LOGGER.debug("Lazy loading file list for: {} ", fileContainerPath);
-    	
-        Node fileContainer = PathUtils.getNode(fileContainerPath, session);
-        return mapper.getFileNodeMapper().getSingleFile(objectClass, fileContainer, parentObject, jcrFileNode, depth, nodeFilter, mapper);
+    	LOGGER.debug("Lazy loading single reference for: {} {}", nodePath, propertyName);
+
+        Node node = session.getNode(nodePath);
+        return mapper.createReferencedObject(field, node.getProperty(propertyName).getValue(), parentObject, session, objClass, depth, nodeFilter);
     }
 }

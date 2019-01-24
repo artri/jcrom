@@ -15,12 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom;
-
-import javax.jcr.Session;
+package org.jcrom.loader;
 
 import net.sf.cglib.proxy.LazyLoader;
 
+import org.jcrom.JcrMappingException;
+import org.jcrom.Session;
+import org.jcrom.mapping.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +42,9 @@ abstract class AbstractLazyLoader implements LazyLoader {
     @Override
     public final Object loadObject() throws JcrMappingException, Exception {
     	LOGGER.trace("loadObject");
-    	Session session = mapper.getJcrom().getSessionFactory().getCurrentSession();
+    	Session session = mapper.getSessionFactory().getCurrentSession();
         // Load object
-        return doLoadObject(session, mapper);    	
+        return doLoadObject(session, mapper);
     }
 
     protected abstract Object doLoadObject(Session session, Mapper mapper) throws Exception;

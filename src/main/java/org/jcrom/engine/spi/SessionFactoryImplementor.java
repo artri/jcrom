@@ -1,8 +1,8 @@
 package org.jcrom.engine.spi;
 
 import org.jcrom.AnnotationReader;
-import org.jcrom.Mapper;
 import org.jcrom.SessionFactory;
+import org.jcrom.mapping.Mapper;
 
 public interface SessionFactoryImplementor extends SessionFactory {
 

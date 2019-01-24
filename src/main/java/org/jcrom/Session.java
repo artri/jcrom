@@ -20,6 +20,12 @@ package org.jcrom;
 import java.io.Closeable;
 import java.io.Serializable;
 
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Value;
+
 public interface Session extends Serializable, AutoCloseable, Closeable {
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//~~~~~~~~~~ SharedSessionContract
@@ -216,4 +222,18 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 * @return The {@link TypeHelper} associated with this session's {@link SessionFactory}
 	 */
 	//TypeHelper getTypeHelper();
+	
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	
+	Node getRootNode() throws RepositoryException;
+	Node getNode(String absolutePath) throws RepositoryException;
+	Node getNodeById(String id) throws RepositoryException;
+	NodeIterator getNodes(String absolutePath) throws RepositoryException;
+	
+	boolean hasNode(String referencePath) throws RepositoryException;
+	
+	Value createValue(String path) throws RepositoryException;
+	Value createValue(Node node) throws RepositoryException;
+	Value createValue(Node node, boolean weak) throws RepositoryException;
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
 }

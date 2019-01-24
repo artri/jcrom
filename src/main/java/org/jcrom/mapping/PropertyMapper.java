@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom;
+package org.jcrom.mapping;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,7 +26,6 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.jcr.Binary;
@@ -40,6 +39,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 
+import org.jcrom.AnnotationReader;
 import org.jcrom.annotations.JcrProperty;
 import org.jcrom.annotations.JcrProtectedProperty;
 import org.jcrom.annotations.JcrSerializedProperty;
@@ -56,16 +56,35 @@ import org.jcrom.util.ReflectionUtils;
  * @author Nicolas Dos Santos
  */
 class PropertyMapper {
+	
+    private MapperImplementor mapper;
 
-    private final Mapper mapper;
-
-    private final TypeHandler typeHandler;
-
-    public PropertyMapper(Mapper mapper) {
+    public PropertyMapper(MapperImplementor mapper) {
         this.mapper = mapper;
-        this.typeHandler = mapper.getTypeHandler();
     }
 
+    /**
+	 * @return the mapper
+	 */
+	public MapperImplementor getMapper() {
+		return mapper;
+	}
+
+	/**
+	 * @param mapper the mapper to set
+	 */
+	public void setMapper(MapperImplementor mapper) {
+		this.mapper = mapper;
+	}
+
+	public TypeHandler getTypeHandler() {
+        return getMapper().getTypeHandler();
+    }
+    
+    public AnnotationReader getAnnotationReader() {
+        return getMapper().getAnnotationReader();
+    }
+    
     void mapPropertiesToMap(String propertyName, Field field, Object obj, Node node, Class<? extends Converter<?, ?>> converterClass, boolean ignoreReadOnlyProperties) throws RepositoryException, IOException, IllegalAccessException {
         Map<String, Object> map = new HashMap<String, Object>();
 
@@ -85,14 +104,14 @@ class PropertyMapper {
             if (!ignoreReadOnlyProperties || (!p.getName().startsWith("jcr:") && !p.getName().startsWith(NamespaceRegistry.NAMESPACE_JCR) && !p.getName().startsWith("nt:") && !p.getName().startsWith(NamespaceRegistry.NAMESPACE_NT))) {
                 if (valueType.isArray()) {
                     if (p.getDefinition().isMultiple()) {
-                        map.put(p.getName(), typeHandler.getValues(valueType.getComponentType(), null, p.getValues(), null));
+                        map.put(p.getName(), getTypeHandler().getValues(valueType.getComponentType(), null, p.getValues(), null));
                     } else {
                         Value[] values = new Value[1];
                         values[0] = p.getValue();
-                        map.put(p.getName(), typeHandler.getValues(valueType.getComponentType(), null, values, null));
+                        map.put(p.getName(), getTypeHandler().getValues(valueType.getComponentType(), null, values, null));
                     }
                 } else {
-                    map.put(p.getName(), typeHandler.getValue(valueType, genericType, p.getValue(), null));
+                    map.put(p.getName(), getTypeHandler().getValue(valueType, genericType, p.getValue(), null));
                 }
             }
         }
@@ -108,7 +127,7 @@ class PropertyMapper {
             }
         }
 
-        typeHandler.setObject(field, obj, fieldValue);
+        getTypeHandler().setObject(field, obj, fieldValue);
     }
 
     void mapSerializedPropertyToField(Object obj, Field field, Node node, int depth, NodeFilter nodeFilter) throws RepositoryException, IOException, IllegalAccessException, ClassNotFoundException {
@@ -118,13 +137,13 @@ class PropertyMapper {
             if (node.hasProperty(propertyName)) {
                 Property p = node.getProperty(propertyName);
                 //field.set(obj, deserialize(p.getStream()));
-                typeHandler.setObject(field, obj, deserialize(p.getBinary().getStream()));
+                getTypeHandler().setObject(field, obj, deserialize(p.getBinary().getStream()));
             }
         }
     }
 
     String getSerializedPropertyName(Field field) {
-        JcrSerializedProperty jcrProperty = mapper.getJcrom().getAnnotationReader().getAnnotation(field, JcrSerializedProperty.class);
+        JcrSerializedProperty jcrProperty = getAnnotationReader().getAnnotation(field, JcrSerializedProperty.class);
         String propertyName = field.getName();
         if (!jcrProperty.name().equals(Mapper.DEFAULT_FIELDNAME)) {
             propertyName = jcrProperty.name();
@@ -133,7 +152,7 @@ class PropertyMapper {
     }
 
     String getPropertyName(Field field) {
-        JcrProperty jcrProperty = mapper.getJcrom().getAnnotationReader().getAnnotation(field, JcrProperty.class);
+        JcrProperty jcrProperty = getAnnotationReader().getAnnotation(field, JcrProperty.class);
         String name = field.getName();
         if (!jcrProperty.name().equals(Mapper.DEFAULT_FIELDNAME)) {
             name = jcrProperty.name();
@@ -142,7 +161,7 @@ class PropertyMapper {
     }
 
     Class<? extends Converter<?, ?>> getPropertyConverter(Field field) {
-        JcrProperty jcrProperty = mapper.getJcrom().getAnnotationReader().getAnnotation(field, JcrProperty.class);
+        JcrProperty jcrProperty = getAnnotationReader().getAnnotation(field, JcrProperty.class);
         Class<? extends Converter<?, ?>> converter = null;
         if (!DefaultConverter.class.equals(jcrProperty.converter())) {
             converter = jcrProperty.converter();
@@ -151,7 +170,7 @@ class PropertyMapper {
     }
 
     String getProtectedPropertyName(Field field) {
-        JcrProtectedProperty jcrProperty = mapper.getJcrom().getAnnotationReader().getAnnotation(field, JcrProtectedProperty.class);
+        JcrProtectedProperty jcrProperty = getAnnotationReader().getAnnotation(field, JcrProtectedProperty.class);
         String name = field.getName();
         if (!jcrProperty.name().equals(Mapper.DEFAULT_FIELDNAME)) {
             name = jcrProperty.name();
@@ -170,7 +189,7 @@ class PropertyMapper {
                 type = ReflectionUtils.getParameterizedClass(converterClass.getGenericInterfaces()[0], 1);
             }
 
-            if (typeHandler.isMap(type)) {
+            if (getTypeHandler().isMap(type)) {
                 // map of properties
                 try {
                     mapPropertiesToMap(name, field, obj, node, converterClass, true);
@@ -187,7 +206,7 @@ class PropertyMapper {
     void mapProtectedPropertyToField(Object obj, Field field, Node node) throws RepositoryException, IllegalAccessException, IOException {
         String name = getProtectedPropertyName(field);
 
-        if (typeHandler.isMap(field.getType())) {
+        if (getTypeHandler().isMap(field.getType())) {
             // map of properties
             mapPropertiesToMap(name, field, obj, node, null, false);
         } else {
@@ -207,7 +226,7 @@ class PropertyMapper {
                 genericType = ReflectionUtils.getConverterGenericType(converterClass, 1);
             }
 
-            Object currentValue = typeHandler.getObject(field, obj);
+            Object currentValue = getTypeHandler().getObject(field, obj);
 
             Object fieldValue;
 	    if (isListOrArray(type)) {
@@ -219,9 +238,9 @@ class PropertyMapper {
 		    values = new Value[] { p.getValue() };
 		}
 
-		fieldValue = typeHandler.getValues(type, genericType, values, currentValue);
+		fieldValue = getTypeHandler().getValues(type, genericType, values, currentValue);
             } else {
-                fieldValue = typeHandler.getValue(type, genericType, p.getValue(), currentValue);
+                fieldValue = getTypeHandler().getValue(type, genericType, p.getValue(), currentValue);
             }
 
             if (converterClass != null) {
@@ -233,14 +252,14 @@ class PropertyMapper {
                 }
             }
 
-            typeHandler.setObject(field, obj, fieldValue);
+            getTypeHandler().setObject(field, obj, fieldValue);
         }
     }
 
     private void mapSerializedFieldToProperty(Field field, Object obj, Node node, int depth, NodeFilter nodeFilter) throws IllegalAccessException, RepositoryException, IOException {
 
         String propertyName = getSerializedPropertyName(field);
-        Object fieldValue = typeHandler.getObject(field, obj);
+        Object fieldValue = getTypeHandler().getObject(field, obj);
         // make sure that this property is supposed to be updated
         if (nodeFilter == null || nodeFilter.isIncluded(NodeFilter.PROPERTY_PREFIX + field.getName(), node, depth)) {
             if (fieldValue != null) {
@@ -264,7 +283,7 @@ class PropertyMapper {
         mapSerializedFieldToProperty(field, obj, node, depth, nodeFilter);
     }
 
-    private void addChildMap(String nodeName, Class<?> paramClass, Map<String, Object> map, Node node, Mapper mapper) throws RepositoryException, IllegalAccessException {
+    private void addChildMap(String nodeName, Class<?> paramClass, Map<String, Object> map, Node node) throws RepositoryException, IllegalAccessException {
 
         boolean nullOrEmpty = map == null || map.isEmpty();
         // remove the child node
@@ -281,7 +300,7 @@ class PropertyMapper {
         }
     }
 
-    private void mapFieldToProperty(Field field, Object obj, Node node, int depth, NodeFilter nodeFilter, Mapper mapper) throws RepositoryException, IllegalAccessException {
+    private void mapFieldToProperty(Field field, Object obj, Node node, int depth, NodeFilter nodeFilter) throws RepositoryException, IllegalAccessException {
 
         String name = getPropertyName(field);
         // make sure that this property is supposed to be updated
@@ -302,43 +321,43 @@ class PropertyMapper {
                 }
             }
 
-            if (typeHandler.isMap(type)) {
+            if (getTypeHandler().isMap(type)) {
                 // this is a Map child, where we map the key/value pairs as properties
                 Class<?> paramClass = ReflectionUtils.getParameterizedClass(genericType, 1);
-                addChildMap(name, paramClass, (Map<String, Object>) value, node, mapper);
+                addChildMap(name, paramClass, (Map<String, Object>) value, node);
                 // addChildMap(field, obj, node, name, mapper);
             } else {
                 // normal property
-                Class<?> paramClass = typeHandler.isList(type) ? ReflectionUtils.getParameterizedClass(genericType) : null;
+                Class<?> paramClass = getTypeHandler().isList(type) ? ReflectionUtils.getParameterizedClass(genericType) : null;
                 mapToProperty(name, type, paramClass, value, node);
             }
         }
     }
 
-    void addProperty(Field field, Object obj, Node node, Mapper mapper) throws RepositoryException, IllegalAccessException {
-        mapFieldToProperty(field, obj, node, NodeFilter.DEPTH_INFINITE, null, mapper);
+    void addProperty(Field field, Object obj, Node node) throws RepositoryException, IllegalAccessException {
+        mapFieldToProperty(field, obj, node, NodeFilter.DEPTH_INFINITE, null);
     }
 
-    void updateProperty(Field field, Object obj, Node node, int depth, NodeFilter nodeFilter, Mapper mapper) throws RepositoryException, IllegalAccessException {
-        mapFieldToProperty(field, obj, node, depth, nodeFilter, mapper);
+    void updateProperty(Field field, Object obj, Node node, int depth, NodeFilter nodeFilter) throws RepositoryException, IllegalAccessException {
+        mapFieldToProperty(field, obj, node, depth, nodeFilter);
     }
 
     void mapToProperty(String propertyName, Class<?> type, Class<?> paramClass, Object propertyValue, Node node) throws RepositoryException {
 
         ValueFactory valueFactory = node.getSession().getValueFactory();
 
-        boolean isMultiple = typeHandler.isList(type) || (type.isArray() && type.getComponentType() != byte.class);
+        boolean isMultiple = getTypeHandler().isList(type) || (type.isArray() && type.getComponentType() != byte.class);
 
         // make sure that the field value is not null
         if (propertyValue != null) {
             if (isMultiple) {
                 // only if there is something to remove... otherwise exception is thrown because nothing to remove
-                Value[] value = typeHandler.createValues(type, paramClass, propertyValue, valueFactory);
+                Value[] value = getTypeHandler().createValues(type, paramClass, propertyValue, valueFactory);
                 if(value != null || (value == null && node.hasProperty(propertyName))) {
                     node.setProperty(propertyName, value);
                 }
             } else {
-                Value value = typeHandler.createValue(type, propertyValue, valueFactory);
+                Value value = getTypeHandler().createValue(type, propertyValue, valueFactory);
                 if (value != null) {
                     node.setProperty(propertyName, value);
                 }
@@ -402,8 +421,7 @@ class PropertyMapper {
      * @return true if type is List or an array, false otherwise
      */
     private boolean isListOrArray(Class<?> type) {
-	return typeHandler.isList(type)
-		|| (type.isArray() && type.getComponentType() != byte.class);
+    	return getTypeHandler().isList(type) || (type.isArray() && type.getComponentType() != byte.class);
     }
 
 }

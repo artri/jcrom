@@ -39,8 +39,6 @@ import org.jcrom.EventListenerDefinition;
 import org.jcrom.FlushMode;
 import org.jcrom.JcrMappingException;
 import org.jcrom.JcrRuntimeException;
-import org.jcrom.Jcrom;
-import org.jcrom.Mapper;
 import org.jcrom.ReflectionAnnotationReader;
 import org.jcrom.Session;
 import org.jcrom.SessionBuilder;
@@ -50,6 +48,7 @@ import org.jcrom.Validator;
 import org.jcrom.engine.spi.SessionBuilderImplementor;
 import org.jcrom.engine.spi.SessionFactoryImplementor;
 import org.jcrom.engine.spi.SessionFactoryOptions;
+import org.jcrom.mapping.Mapper;
 import org.jcrom.type.DefaultTypeHandler;
 import org.jcrom.type.JavaFXTypeHandler;
 import org.jcrom.type.TypeHandler;
@@ -66,6 +65,7 @@ import org.slf4j.LoggerFactory;
  * @author Nicolas Dos Santos
  */
 public class SessionFactoryImpl implements SessionFactoryImplementor {
+	private static final long serialVersionUID = -6974581983167212739L;
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionFactoryImpl.class);
 	private static final String JAVAFX_OBJECT_PROPERTY_CLASS = "javafx.beans.property.ObjectProperty";
 	

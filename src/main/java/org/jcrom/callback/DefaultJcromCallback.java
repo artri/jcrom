@@ -22,7 +22,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 
 import org.jcrom.JcrMappingException;
-import org.jcrom.Jcrom;
 import org.jcrom.annotations.JcrNode;
 
 /**
@@ -47,10 +46,8 @@ import org.jcrom.annotations.JcrNode;
  */
 public class DefaultJcromCallback implements JcromCallback {
 
-    private final Jcrom jcrom;
-
-    public DefaultJcromCallback(Jcrom jcrom) {
-        this.jcrom = jcrom;
+    public DefaultJcromCallback() {
+    	
     }
 
     /**

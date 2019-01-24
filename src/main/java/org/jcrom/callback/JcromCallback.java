@@ -21,7 +21,6 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 
 import org.jcrom.JcrMappingException;
-import org.jcrom.Jcrom;
 import org.jcrom.annotations.JcrNode;
 
 /**

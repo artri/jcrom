@@ -42,6 +42,7 @@ import org.jcrom.annotations.JcrVersionCreated;
 import org.jcrom.annotations.JcrVersionName;
 import org.jcrom.converter.Converter;
 import org.jcrom.converter.DefaultConverter;
+import org.jcrom.engine.spi.SessionFactoryImplementor;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.ReflectionUtils;
 import org.slf4j.Logger;
@@ -56,17 +57,17 @@ import org.slf4j.LoggerFactory;
 public class Validator {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Validator.class);
 
-	private SessionFactory sessionFactory;
+	private SessionFactoryImplementor sessionFactory;
 
-    public Validator(SessionFactory sessionFactory) {
+    public Validator(SessionFactoryImplementor sessionFactory) {
     	this.sessionFactory = sessionFactory;
     }
     
-    public SessionFactory getSessionFactory() {
+    public SessionFactoryImplementor getSessionFactory() {
 		return sessionFactory;
 	}
 
-	public void setSessionFactory(SessionFactory sessionFactory) {
+	public void setSessionFactory(SessionFactoryImplementor sessionFactory) {
 		this.sessionFactory = sessionFactory;
 	}
 
@@ -87,7 +88,7 @@ public class Validator {
      * @param dynamicInstantiation when dynamic instantiation is on, we allow interfaces
      * @return a Set of the input class and referenced classes, validated and ready for mapping
      */
-    Set<Class<?>> validate(Class<?> c, boolean dynamicInstantiation) {
+    public Set<Class<?>> validate(Class<?> c, boolean dynamicInstantiation) {
         Set<Class<?>> validClasses = new HashSet<Class<?>>();
         validateInternal(c, validClasses, dynamicInstantiation);
         return validClasses;

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom;
+package org.jcrom.loader;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -24,6 +24,7 @@ import net.sf.cglib.proxy.Enhancer;
 
 import org.jcrom.annotations.JcrChildNode;
 import org.jcrom.annotations.JcrFileNode;
+import org.jcrom.mapping.Mapper;
 import org.jcrom.util.NodeFilter;
 
 /**

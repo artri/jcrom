@@ -15,15 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom;
+package org.jcrom.loader;
 
 import java.lang.reflect.Field;
 
 import javax.jcr.Node;
-import javax.jcr.Session;
 
+import org.jcrom.Session;
+import org.jcrom.mapping.Mapper;
 import org.jcrom.util.NodeFilter;
-import org.jcrom.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ class ReferenceListLoader extends AbstractLazyLoader {
     protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
     	LOGGER.debug("Lazy loading file list for: {} {}", nodePath, propertyName);
 
-    	Node node = PathUtils.getNode(nodePath, session);
-        return mapper.getReferenceMapper().getReferenceList(field, propertyName, objClass, node, parentObject, depth, nodeFilter, mapper);
+    	Node node = session.getNode(nodePath);
+        return mapper.getReferenceList(field, propertyName, objClass, node, parentObject, depth, nodeFilter);
     }
 }

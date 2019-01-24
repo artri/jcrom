@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.UUID;
 
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
@@ -30,7 +31,6 @@ import javax.jcr.Value;
 import org.jcrom.FlushMode;
 import org.jcrom.JcrMappingException;
 import org.jcrom.JcrRuntimeException;
-import org.jcrom.Mapper;
 import org.jcrom.Session;
 import org.jcrom.SessionEventListener;
 import org.jcrom.SessionFactory;
@@ -39,8 +39,10 @@ import org.jcrom.annotations.JcrNode;
 import org.jcrom.callback.JcromCallback;
 import org.jcrom.engine.spi.SessionFactoryImplementor;
 import org.jcrom.engine.spi.SessionImplementor;
+import org.jcrom.mapping.Mapper;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.NodeFilter;
+import org.jcrom.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +71,9 @@ public class SessionImpl implements SessionImplementor {
 	private boolean autoClose;
 	private transient boolean disallowOutOfTransactionUpdateOperations;
 	private transient boolean discardOnClose;
+	
+	
+	private javax.jcr.Session jcrSession;
 	
 	public SessionImpl(SessionFactoryImpl sessionFactory, SessionCreationOptions options) {
 		this.sessionFactory = sessionFactory;
@@ -399,6 +404,88 @@ public class SessionImpl implements SessionImplementor {
         return getSessionFactory().getMapper();
     }
 	
+	@Override
+	public Node getRootNode() throws RepositoryException {
+		return jcrSession.getRootNode();
+	}
+	
+	@Override
+	public Node getNode(String absolutePath) throws RepositoryException {
+        // special case, add directly to the root node
+        return absolutePath.equals("/") ? jcrSession.getRootNode() : jcrSession.getRootNode().getNode(relativePath(absolutePath));
+	}
+	
+	@Override
+	public Node getNodeById(String id) throws RepositoryException {
+		return jcrSession.getNodeByIdentifier(id);
+	}	
+	
+	@Override
+	public NodeIterator getNodes(String absolutePath) throws RepositoryException {
+        // special case, add directly to the root node
+        return absolutePath.equals("/") ? jcrSession.getRootNode().getNodes() : jcrSession.getRootNode().getNodes(relativePath(absolutePath));
+    }
+	
+	@Override
+	public boolean hasNode(String referencePath) throws RepositoryException {
+		return jcrSession.getRootNode().hasNode(relativePath(referencePath));
+	}
+	
+	@Override
+	public Value createValue(String path) throws RepositoryException {
+		return jcrSession.getValueFactory().createValue(path);
+	}
+	
+	@Override
+	public Value createValue(Node node) throws RepositoryException {
+		return jcrSession.getValueFactory().createValue(node);
+	}
+	
+	@Override
+	public Value createValue(Node node, boolean weak) throws RepositoryException {
+		return jcrSession.getValueFactory().createValue(node, weak);
+	}
+	
+    /**
+     * Creates a valid JCR node name from the String supplied, by
+     * replacing all non-alphanumeric chars.
+     * 
+     * @param str the input String
+     * @return a valid JCR node name for the String
+     */
+    public static String createValidName(String str) {
+        return replaceNonAlphanumeric(str, '_');
+    }
+    
+    public static String relativePath(String absolutePath) {
+        if (absolutePath.charAt(0) == '/') {
+            return absolutePath.substring(1);
+        } else {
+            return absolutePath;
+        }
+    }
+    
+    /**
+     * Replaces occurences of non-alphanumeric characters with a
+     * supplied char. A non-alphanumeric character at the beginning or end
+     * is replaced with ''.
+     */
+    public static String replaceNonAlphanumeric(String str, char subst) {
+        StringBuffer ret = new StringBuffer(str.length());
+        char[] testChars = str.toCharArray();
+        char lastChar = 'A';
+        for (int i = 0; i < testChars.length; i++) {
+            if (Character.isLetterOrDigit(testChars[i]) || testChars[i] == '.' || testChars[i] == ':') {
+                ret.append(testChars[i]);
+                lastChar = testChars[i];
+            } else if (i > 0 && (i + 1) != testChars.length && lastChar != subst) {
+                ret.append(subst);
+                lastChar = subst;
+            }
+        }
+        return ret.toString();
+    }
+    
     /**
      * Maps the node supplied to an instance of the entity class. Loads all child nodes, to infinite depth.
      * 

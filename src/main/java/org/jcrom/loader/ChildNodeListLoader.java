@@ -15,57 +15,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jcrom;
+package org.jcrom.loader;
 
 import javax.jcr.Node;
-import javax.jcr.Session;
 
+import org.jcrom.Session;
+import org.jcrom.annotations.JcrChildNode;
+import org.jcrom.mapping.Mapper;
 import org.jcrom.util.NodeFilter;
-import org.jcrom.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Handles lazy loading of single child node.
+ * Handles lazy loading of child node lists.
  * 
  * @author Olafur Gauti Gudmundsson
  * @author Nicolas Dos Santos
  */
-class ChildNodeLoader extends AbstractLazyLoader {
+class ChildNodeListLoader extends AbstractLazyLoader {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ChildNodeLoader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChildNodeListLoader.class);
 
     private final Class<?> objectClass;
     private final Object parentObject;
     private final String containerPath;
     private final int depth;
     private final NodeFilter nodeFilter;
-    private final boolean pathIsContainer;
+    private final JcrChildNode jcrChildNode;
 
-    ChildNodeLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter) {
-        this(objectClass, parentObject, containerPath, mapper, depth, nodeFilter, true);
-    }
-
-    ChildNodeLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter, boolean pathIsContainer) {
+    ChildNodeListLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode) {
         super(mapper);
         this.objectClass = objectClass;
         this.parentObject = parentObject;
         this.containerPath = containerPath;
         this.depth = depth;
         this.nodeFilter = nodeFilter;
-        this.pathIsContainer = pathIsContainer;
+        this.jcrChildNode = jcrChildNode;
     }
 
     @Override
     protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
-    	LOGGER.debug("Lazy loading single child for: {}", containerPath);
-    	
-        Node node;
-        if (pathIsContainer) {
-            node = PathUtils.getNode(containerPath, session).getNodes().nextNode();
-        } else {
-            node = PathUtils.getNode(containerPath, session);
-        }
-        return mapper.getChildNodeMapper().getSingleChild(objectClass, node, parentObject, mapper, depth, nodeFilter);
+    	LOGGER.debug("Lazy loading children list for: {}", containerPath);
+
+    	Node childrenContainer = session.getNode(containerPath);
+        return mapper.getChildrenList(objectClass, childrenContainer, parentObject, depth, nodeFilter, jcrChildNode);
     }
+
 }
