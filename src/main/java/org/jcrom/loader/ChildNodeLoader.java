@@ -19,8 +19,7 @@ package org.jcrom.loader;
 
 import javax.jcr.Node;
 
-import org.jcrom.Session;
-import org.jcrom.mapping.Mapper;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.util.NodeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +41,12 @@ class ChildNodeLoader extends AbstractLazyLoader {
     private final NodeFilter nodeFilter;
     private final boolean pathIsContainer;
 
-    ChildNodeLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter) {
-        this(objectClass, parentObject, containerPath, mapper, depth, nodeFilter, true);
+    ChildNodeLoader(JcrSessionImplementor session, Class<?> objectClass, Object parentObject, String containerPath, int depth, NodeFilter nodeFilter) {
+        this(session, objectClass, parentObject, containerPath, depth, nodeFilter, true);
     }
 
-    ChildNodeLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter, boolean pathIsContainer) {
-        super(mapper);
+    ChildNodeLoader(JcrSessionImplementor session, Class<?> objectClass, Object parentObject, String containerPath, int depth, NodeFilter nodeFilter, boolean pathIsContainer) {
+    	super(session);
         this.objectClass = objectClass;
         this.parentObject = parentObject;
         this.containerPath = containerPath;
@@ -57,7 +56,7 @@ class ChildNodeLoader extends AbstractLazyLoader {
     }
 
     @Override
-    protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
+    protected Object doLoadObject(JcrSessionImplementor session) throws Exception {
     	LOGGER.debug("Lazy loading single child for: {}", containerPath);
     	
         Node node;
@@ -66,6 +65,6 @@ class ChildNodeLoader extends AbstractLazyLoader {
         } else {
             node = session.getNode(containerPath);
         }
-        return mapper.getSingleChild(objectClass, node, parentObject, depth, nodeFilter);
+        return session.getMapper().getSingleChild(objectClass, node, parentObject, depth, nodeFilter);
     }
 }

@@ -30,12 +30,12 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.jcrom.JcrRuntimeException;
-import org.jcrom.Session;
-import org.jcrom.SessionFactory;
+import org.jcrom.JcrSession;
+import org.jcrom.JcrSessionFactory;
 import org.jcrom.Transaction;
 import org.jcrom.TransactionStatus;
-import org.jcrom.engine.spi.SessionFactoryImplementor;
-import org.jcrom.engine.spi.SessionImplementor;
+import org.jcrom.engine.spi.JcrSessionFactoryImplementor;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,12 +44,12 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ThreadLocalSessionContext.class);
 	
 	private static final Class[] SESSION_PROXY_INTERFACES = new Class[] {
-		Session.class,
-		SessionImplementor.class,
+		JcrSession.class,
+		JcrSessionImplementor.class,
 //		EventSource.class,
 //		LobCreationContext.class
 	};
-	private final SessionFactoryImplementor sessionFactory;
+	private final JcrSessionFactoryImplementor sessionFactory;
 	
 	/**
 	 * A ThreadLocal maintaining current sessions for the given execution thread.
@@ -57,14 +57,14 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	 * the possibility for multiple SessionFactory instances being used during execution
 	 * of the given thread.
 	 */
-	private static final ThreadLocal<Map<SessionFactory, Session>> CONTEXT_TL = ThreadLocal.withInitial(HashMap::new);
+	private static final ThreadLocal<Map<JcrSessionFactory, JcrSession>> CONTEXT_TL = ThreadLocal.withInitial(HashMap::new);
 	
 	/**
 	 * Constructs a ThreadLocalSessionContext
 	 *
 	 * @param sessionFactory The factory this context will service
 	 */	
-	public ThreadLocalSessionContext(SessionFactoryImplementor sessionFactory) {
+	public ThreadLocalSessionContext(JcrSessionFactoryImplementor sessionFactory) {
 		this.sessionFactory = sessionFactory;
 	}
 
@@ -73,7 +73,7 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	 *
 	 * @return The SessionFactory being serviced by this context
 	 */
-	public SessionFactoryImplementor getSessionFactory() {
+	public JcrSessionFactoryImplementor getSessionFactory() {
 		return sessionFactory;
 	}
 
@@ -82,8 +82,8 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	 * @see org.jcrom.internal.CurrentSessionContext#currentSession()
 	 */
 	@Override
-	public Session getCurrentSession() throws JcrRuntimeException {
-		Session current = existingSession(getSessionFactory());
+	public JcrSession getCurrentSession() throws JcrRuntimeException {
+		JcrSession current = existingSession(getSessionFactory());
 		if (null == current) {
 			current = buildOrObtainSession();
 			// register a cleanup sync
@@ -101,7 +101,7 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	}
 	
 
-	private boolean needsWrapping(Session session) {
+	private boolean needsWrapping(JcrSession session) {
 		// try to make sure we don't wrap and already wrapped session
 		if (Proxy.isProxyClass(session.getClass())) {
 			final InvocationHandler invocationHandler = Proxy.getInvocationHandler(session);
@@ -112,10 +112,10 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 		return true;
 	}
 	
-	protected Session wrap(Session session) {
+	protected JcrSession wrap(JcrSession session) {
 		final TransactionProtectionWrapper wrapper = new TransactionProtectionWrapper( session );
-		final Session wrapped = (Session) Proxy.newProxyInstance(
-				Session.class.getClassLoader(),
+		final JcrSession wrapped = (JcrSession) Proxy.newProxyInstance(
+				JcrSession.class.getClassLoader(),
 				SESSION_PROXY_INTERFACES,
 				wrapper
 		);
@@ -131,7 +131,7 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	 *
 	 * @return the built or (re)obtained session.
 	 */	
-	protected Session buildOrObtainSession() {
+	protected JcrSession buildOrObtainSession() {
 		return getSessionFactory().openSession();
 	}
 	
@@ -139,15 +139,15 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 		return new CleanupSync(getSessionFactory());
 	}
 	
-	protected void validateExistingSession(Session session) {
+	protected void validateExistingSession(JcrSession session) {
 		return;
 	}
 	
-	private static Session existingSession(SessionFactory factory) {
+	private static JcrSession existingSession(JcrSessionFactory factory) {
 		return sessionMap().get(factory);
 	}
 
-	protected static Map<SessionFactory, Session> sessionMap() {
+	protected static Map<JcrSessionFactory, JcrSession> sessionMap() {
 		return CONTEXT_TL.get();
 	}
 
@@ -156,8 +156,8 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	 *
 	 * @param session The session to bind.
 	 */
-	public static void bind(Session session) {
-		final SessionFactory factory = session.getSessionFactory();
+	public static void bind(JcrSession session) {
+		final JcrSessionFactory factory = session.getSessionFactory();
 		doBind(session, factory);
 	}
 	
@@ -167,19 +167,19 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	 * @param factory The factory for which the session should be unbound.
 	 * @return The session which was unbound.
 	 */
-	public static void unbind(SessionFactory sessionFactory) {
+	public static void unbind(JcrSessionFactory sessionFactory) {
 		doUnbind(sessionFactory, true);
 	}
 	
 	@SuppressWarnings({"unchecked"})
-	private static void doBind(Session session, SessionFactory sessionFactory) {
-		Session orphanedPreviousSession = sessionMap().put(sessionFactory, session);
+	private static void doBind(JcrSession session, JcrSessionFactory sessionFactory) {
+		JcrSession orphanedPreviousSession = sessionMap().put(sessionFactory, session);
 		terminateOrphanedSession(orphanedPreviousSession, sessionFactory);
 	}
 		
-	private static void doUnbind(SessionFactory sessionFactory, boolean releaseMapIfEmpty) {
-		final Map<SessionFactory, Session> sessionMap = sessionMap();
-		final Session session = sessionMap.remove(sessionFactory);
+	private static void doUnbind(JcrSessionFactory sessionFactory, boolean releaseMapIfEmpty) {
+		final Map<JcrSessionFactory, JcrSession> sessionMap = sessionMap();
+		final JcrSession session = sessionMap.remove(sessionFactory);
 		if (releaseMapIfEmpty && sessionMap.isEmpty()) {
 			//Do not use set(null) as it would prevent the initialValue to be invoked again in case of need.
 			CONTEXT_TL.remove();
@@ -187,7 +187,7 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 		terminateOrphanedSession(session, sessionFactory);
 	}
 	
-	private static void terminateOrphanedSession(Session orphan, SessionFactory sessionFactory) {
+	private static void terminateOrphanedSession(JcrSession orphan, JcrSessionFactory sessionFactory) {
 		if (orphan == null) {
 			return;
 		}
@@ -218,9 +218,9 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	 * Transaction sync used for cleanup of the internal session map.
 	 */
 	protected static class CleanupSync implements Serializable, javax.transaction.Synchronization {
-		protected final SessionFactory factory;
+		protected final JcrSessionFactory factory;
 
-		public CleanupSync(SessionFactory factory) {
+		public CleanupSync(JcrSessionFactory factory) {
 			this.factory = factory;
 		}
 
@@ -235,10 +235,10 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 	}
 	
 	private class TransactionProtectionWrapper implements InvocationHandler, Serializable {
-		private final Session realSession;
-		private Session wrappedSession;
+		private final JcrSession realSession;
+		private JcrSession wrappedSession;
 
-		public TransactionProtectionWrapper(Session realSession) {
+		public TransactionProtectionWrapper(JcrSession realSession) {
 			this.realSession = realSession;
 		}
 
@@ -310,7 +310,7 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 		 *
 		 * @param wrapped Value to set for property 'wrapped'.
 		 */
-		public void setWrapped(Session wrapped) {
+		public void setWrapped(JcrSession wrapped) {
 			this.wrappedSession = wrapped;
 		}
 	
@@ -322,7 +322,7 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 			// serialized, to be completely correct, we need to make sure
 			// that unbinding of that session occurs.
 			oos.defaultWriteObject();
-			SessionFactoryImplementor sfi = getSessionFactory();
+			JcrSessionFactoryImplementor sfi = getSessionFactory();
 			if (existingSession(sfi) == wrappedSession) {
 				unbind(sfi);
 			}

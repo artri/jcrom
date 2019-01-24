@@ -29,14 +29,14 @@ import javax.jcr.Session;
 
 import org.jcrom.JcrFile;
 import org.jcrom.Jcrom;
-import org.jcrom.SessionFactory;
+import org.jcrom.JcrSessionFactory;
 import org.jcrom.dao.TreeDAO;
 import org.jcrom.entities.DynamicObject;
 import org.jcrom.entities.LazyInterface;
 import org.jcrom.entities.LazyObject;
 import org.jcrom.entities.Tree;
 import org.jcrom.entities.TreeNode;
-import org.jcrom.internal.SessionFactoryImpl;
+import org.jcrom.internal.JcrSessionFactoryImpl;
 import org.junit.Test;
 import org.modeshape.test.ModeShapeSingleUseTest;
 
@@ -219,7 +219,7 @@ public class TestLazyLoading extends ModeShapeSingleUseTest {
     @Test
     public void testLazyLoadingWithSessionFactory() throws Exception {
 
-        SessionFactory sessionFactory = new SessionFactoryImpl(repository, null);
+        JcrSessionFactory sessionFactory = new JcrSessionFactoryImpl(repository, null);
 
         Jcrom jcrom = new Jcrom(true, true);
         jcrom.map(Tree.class).map(LazyObject.class);

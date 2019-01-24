@@ -28,7 +28,7 @@ import org.jcrom.type.TypeHandler;
  * 
  * @author Nicolas Dos Santos
  */
-public interface SessionFactory extends Serializable, Closeable {
+public interface JcrSessionFactory extends Serializable, Closeable {
 	/**
 	 * Get the special options used to build the factory.
 	 *
@@ -37,7 +37,7 @@ public interface SessionFactory extends Serializable, Closeable {
 	SessionFactoryOptions getOptions();
 	
 	/**
-	 * Obtain a {@link Session} builder.
+	 * Obtain a {@link JcrSession} builder.
 	 *
 	 * @return The session builder
 	 */
@@ -56,15 +56,15 @@ public interface SessionFactory extends Serializable, Closeable {
 	 * @return The created session
 	 * @throws JcrRuntimeException Indicates a problem opening the session; pretty rare here.
 	 */
-	Session openSession() throws JcrRuntimeException;
+	JcrSession openSession() throws JcrRuntimeException;
 	
 	/**
-	 * Obtains the current {@link Session}.
+	 * Obtains the current {@link JcrSession}.
 	 * 
 	 * @return The current session
 	 * @throws JcrRuntimeException Indicates an issue locating a suitable current session.
 	 */
-	Session getCurrentSession() throws JcrRuntimeException;
+	JcrSession getCurrentSession() throws JcrRuntimeException;
 	
 	/**
 	 * Check if the SessionFactory is already closed.
@@ -84,8 +84,8 @@ public interface SessionFactory extends Serializable, Closeable {
 	 * Destroy this <tt>SessionFactory</tt> and release all resources (caches, connection pools, etc).
 	 * 
 	 * It is the responsibility of the application to ensure that there are no
-	 * open {@link Session sessions} before calling this method as the impact
-	 * on those {@link Session sessions} is indeterminate.
+	 * open {@link JcrSession sessions} before calling this method as the impact
+	 * on those {@link JcrSession sessions} is indeterminate.
 	 * 
 	 * @throws JcrRuntimeException Indicates an issue closing the factory.
 	 */

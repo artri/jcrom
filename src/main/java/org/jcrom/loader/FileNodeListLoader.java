@@ -19,9 +19,8 @@ package org.jcrom.loader;
 
 import javax.jcr.Node;
 
-import org.jcrom.Session;
 import org.jcrom.annotations.JcrFileNode;
-import org.jcrom.mapping.Mapper;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.util.NodeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +42,8 @@ class FileNodeListLoader extends AbstractLazyLoader {
     private final int depth;
     private final NodeFilter nodeFilter;
 
-    FileNodeListLoader(Class<?> objectClass, Object parentObject, String fileContainerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
-        super(mapper);
+    FileNodeListLoader(JcrSessionImplementor session, Class<?> objectClass, Object parentObject, String fileContainerPath, int depth, NodeFilter nodeFilter, JcrFileNode jcrFileNode) {
+    	super(session);
         this.objectClass = objectClass;
         this.parentObject = parentObject;
         this.jcrFileNode = jcrFileNode;
@@ -54,10 +53,10 @@ class FileNodeListLoader extends AbstractLazyLoader {
     }
 
     @Override
-    protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
+    protected Object doLoadObject(JcrSessionImplementor session) throws Exception {
     	LOGGER.debug("Lazy loading file list for: {} ", fileContainerPath);
     	
         Node fileContainer = session.getNode(fileContainerPath);
-        return mapper.getFileList(objectClass, fileContainer, parentObject, jcrFileNode, depth, nodeFilter);
+        return session.getMapper().getFileList(objectClass, fileContainer, parentObject, jcrFileNode, depth, nodeFilter);
     }
 }

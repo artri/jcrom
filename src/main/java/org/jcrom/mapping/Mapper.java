@@ -26,7 +26,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 
 import org.jcrom.JcrFile;
-import org.jcrom.Session;
+import org.jcrom.JcrSession;
 import org.jcrom.annotations.JcrChildNode;
 import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.util.NodeFilter;
@@ -42,7 +42,7 @@ public interface Mapper {
 	//TODO: move to MapperImplementor
 	static final String DEFAULT_FIELDNAME = "fieldName";
 	
-	Session getSession();
+	JcrSession getSession();
 	
 	List<?> getChildrenList(Class<?> childObjClass, Node childrenContainer, Object parentObj, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode)
 					throws ClassNotFoundException, InstantiationException, RepositoryException, IllegalAccessException, IOException;
@@ -59,6 +59,6 @@ public interface Mapper {
     List<?> getReferenceList(Field field, String propertyName, Class<?> referenceObjClass, Node node, Object obj, int depth, NodeFilter nodeFilter) 
     		throws ClassNotFoundException, InstantiationException, RepositoryException, IllegalAccessException, IOException;
     
-    Object createReferencedObject(Field field, Value value, Object obj, Session session, Class<?> referenceObjClass, int depth, NodeFilter nodeFilter) 
+    Object createReferencedObject(Field field, Value value, Object obj, Class<?> referenceObjClass, int depth, NodeFilter nodeFilter) 
     		throws ClassNotFoundException, InstantiationException, RepositoryException, IllegalAccessException, IOException;
 }

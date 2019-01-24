@@ -40,13 +40,13 @@ import org.jcrom.FlushMode;
 import org.jcrom.JcrMappingException;
 import org.jcrom.JcrRuntimeException;
 import org.jcrom.ReflectionAnnotationReader;
-import org.jcrom.Session;
+import org.jcrom.JcrSession;
 import org.jcrom.SessionBuilder;
 import org.jcrom.SessionEventListener;
-import org.jcrom.SessionFactory;
+import org.jcrom.JcrSessionFactory;
 import org.jcrom.Validator;
 import org.jcrom.engine.spi.SessionBuilderImplementor;
-import org.jcrom.engine.spi.SessionFactoryImplementor;
+import org.jcrom.engine.spi.JcrSessionFactoryImplementor;
 import org.jcrom.engine.spi.SessionFactoryOptions;
 import org.jcrom.mapping.Mapper;
 import org.jcrom.type.DefaultTypeHandler;
@@ -64,9 +64,9 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Nicolas Dos Santos
  */
-public class SessionFactoryImpl implements SessionFactoryImplementor {
+public class JcrSessionFactoryImpl implements JcrSessionFactoryImplementor {
 	private static final long serialVersionUID = -6974581983167212739L;
-	private static final Logger LOGGER = LoggerFactory.getLogger(SessionFactoryImpl.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(JcrSessionFactoryImpl.class);
 	private static final String JAVAFX_OBJECT_PROPERTY_CLASS = "javafx.beans.property.ObjectProperty";
 	
 	private String name;
@@ -90,19 +90,19 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
      * Default Constructor
      * Use this constructor if you can set repository, credentials by injection
      **/
-    public SessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions) {
+    public JcrSessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions) {
     	this(sessionFactoryOptions, null);
     }
 
-    public SessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions, Repository repository) {
+    public JcrSessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions, Repository repository) {
         this(sessionFactoryOptions, repository, null);
     }
 
-    public SessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions, Repository repository, Credentials credentials) {
+    public JcrSessionFactoryImpl(SessionFactoryOptions sessionFactoryOptions, Repository repository, Credentials credentials) {
         this(sessionFactoryOptions, repository, credentials, null);
     }
 
-    public SessionFactoryImpl(SessionFactoryOptions options, Repository repository, Credentials credentials, String workspaceName) {
+    public JcrSessionFactoryImpl(SessionFactoryOptions options, Repository repository, Credentials credentials, String workspaceName) {
     	this.options = options;
     	this.name = options.getSessionFactoryName();
     	this.uuid = options.getUUID();
@@ -135,7 +135,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
     
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#getOptions()
+	 * @see org.jcrom.JcrSessionFactory#getOptions()
 	 */
 	public SessionFactoryOptions getOptions() {
 		return options;
@@ -173,7 +173,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#withOptions()
+	 * @see org.jcrom.JcrSessionFactory#withOptions()
 	 */
 	@Override
 	public SessionBuilderImplementor withOptions() {
@@ -182,19 +182,19 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#openSession()
+	 * @see org.jcrom.JcrSessionFactory#openSession()
 	 */
 	@Override
-	public Session openSession() throws JcrRuntimeException {
+	public JcrSession openSession() throws JcrRuntimeException {
 		return withOptions().openSession();	
 	}
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#getCurrentSession()
+	 * @see org.jcrom.JcrSessionFactory#getCurrentSession()
 	 */
 	@Override
-	public Session getCurrentSession() throws JcrRuntimeException {
+	public JcrSession getCurrentSession() throws JcrRuntimeException {
 		if (null == currentSessionContext) {
 			throw new JcrRuntimeException("No CurrentSessionContext configured!");
 		}
@@ -203,7 +203,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#isClosed()
+	 * @see org.jcrom.JcrSessionFactory#isClosed()
 	 */
 	@Override
 	public boolean isClosed() {
@@ -212,7 +212,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#isOpened()
+	 * @see org.jcrom.JcrSessionFactory#isOpened()
 	 */
 	@Override
 	public boolean isOpened() {
@@ -221,7 +221,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.SessionFactory#close()
+	 * @see org.jcrom.JcrSessionFactory#close()
 	 */
 	@Override
 	public void close() throws JcrRuntimeException {
@@ -475,7 +475,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
     static class SessionBuilderImpl implements SessionBuilderImplementor, SessionCreationOptions {
     	private static final Logger LOGGER = LoggerFactory.getLogger(SessionBuilderImpl.class);
     	
-    	private final SessionFactoryImpl sessionFactory;
+    	private final JcrSessionFactoryImpl sessionFactory;
     	private Connection connection;
     	private boolean autoJoinTransactions = true;
 		private FlushMode flushMode;
@@ -486,7 +486,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 		private List<SessionEventListener> listeners;
 		private List<EventListenerDefinition> eventListeners;
 		
-		public SessionBuilderImpl(SessionFactoryImpl sessionFactory) {
+		public SessionBuilderImpl(JcrSessionFactoryImpl sessionFactory) {
 			this.sessionFactory = sessionFactory;
 			// initialize with default values
 			this.autoClose = sessionFactory.getOptions().isAutoCloseSessionEnabled();
@@ -526,9 +526,9 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 		// SessionBuilder
 
 		@Override
-		public Session openSession() {
+		public JcrSession openSession() {
 			LOGGER.trace("Opening JCR Session.");
-			final SessionImpl session = new SessionImpl(sessionFactory, this);
+			final JcrSessionImpl session = new JcrSessionImpl(sessionFactory, this);
 
 			for (SessionEventListener listener : listeners) {
 				LOGGER.warn("Adding listener to a session: skipped");
@@ -546,7 +546,7 @@ public class SessionFactoryImpl implements SessionFactoryImplementor {
 	     * @return the listened session
 	     * @throws javax.jcr.RepositoryException
 	     */
-	    private Session addListeners(Session session) throws RepositoryException {
+	    private JcrSession addListeners(JcrSession session) throws RepositoryException {
 	        if (getRepository() == null) {
 	            throw new IllegalArgumentException("repository is required");
 	        }

@@ -19,9 +19,8 @@ package org.jcrom.loader;
 
 import javax.jcr.Node;
 
-import org.jcrom.Session;
 import org.jcrom.annotations.JcrChildNode;
-import org.jcrom.mapping.Mapper;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.util.NodeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +42,8 @@ class ChildNodeListLoader extends AbstractLazyLoader {
     private final NodeFilter nodeFilter;
     private final JcrChildNode jcrChildNode;
 
-    ChildNodeListLoader(Class<?> objectClass, Object parentObject, String containerPath, Mapper mapper, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode) {
-        super(mapper);
+    ChildNodeListLoader(JcrSessionImplementor session, Class<?> objectClass, Object parentObject, String containerPath, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode) {
+        super(session);
         this.objectClass = objectClass;
         this.parentObject = parentObject;
         this.containerPath = containerPath;
@@ -54,11 +53,11 @@ class ChildNodeListLoader extends AbstractLazyLoader {
     }
 
     @Override
-    protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
+    protected Object doLoadObject(JcrSessionImplementor session) throws Exception {
     	LOGGER.debug("Lazy loading children list for: {}", containerPath);
 
     	Node childrenContainer = session.getNode(containerPath);
-        return mapper.getChildrenList(objectClass, childrenContainer, parentObject, depth, nodeFilter, jcrChildNode);
+        return session.getMapper().getChildrenList(objectClass, childrenContainer, parentObject, depth, nodeFilter, jcrChildNode);
     }
 
 }

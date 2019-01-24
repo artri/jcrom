@@ -45,6 +45,7 @@ import org.jcrom.annotations.JcrProtectedProperty;
 import org.jcrom.annotations.JcrSerializedProperty;
 import org.jcrom.converter.Converter;
 import org.jcrom.converter.DefaultConverter;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.NodeFilter;
 import org.jcrom.util.ReflectionUtils;
@@ -57,32 +58,18 @@ import org.jcrom.util.ReflectionUtils;
  */
 class PropertyMapper {
 	
-    private MapperImplementor mapper;
+    private JcrSessionImplementor session;
 
-    public PropertyMapper(MapperImplementor mapper) {
-        this.mapper = mapper;
-    }
-
-    /**
-	 * @return the mapper
-	 */
-	public MapperImplementor getMapper() {
-		return mapper;
-	}
-
-	/**
-	 * @param mapper the mapper to set
-	 */
-	public void setMapper(MapperImplementor mapper) {
-		this.mapper = mapper;
-	}
-
-	public TypeHandler getTypeHandler() {
-        return getMapper().getTypeHandler();
+    public PropertyMapper(JcrSessionImplementor session) {
+    	this.session = session;
     }
     
-    public AnnotationReader getAnnotationReader() {
-        return getMapper().getAnnotationReader();
+	private TypeHandler getTypeHandler() {
+        return session.getTypeHandler();
+    }
+    
+    private AnnotationReader getAnnotationReader() {
+        return session.getAnnotationReader();
     }
     
     void mapPropertiesToMap(String propertyName, Field field, Object obj, Node node, Class<? extends Converter<?, ?>> converterClass, boolean ignoreReadOnlyProperties) throws RepositoryException, IOException, IllegalAccessException {
@@ -292,7 +279,7 @@ class PropertyMapper {
             nodeIterator.nextNode().remove();
         }
         // add the map as a child node
-        Node childContainer = node.addNode(mapper.getCleanName(nodeName));
+        Node childContainer = node.addNode(session.getCleanName(nodeName));
         if (!nullOrEmpty) {
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 mapToProperty(entry.getKey(), paramClass, null, entry.getValue(), childContainer);

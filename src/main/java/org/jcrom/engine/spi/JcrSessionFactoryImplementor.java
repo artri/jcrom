@@ -1,10 +1,10 @@
 package org.jcrom.engine.spi;
 
 import org.jcrom.AnnotationReader;
-import org.jcrom.SessionFactory;
+import org.jcrom.JcrSessionFactory;
 import org.jcrom.mapping.Mapper;
 
-public interface SessionFactoryImplementor extends SessionFactory {
+public interface JcrSessionFactoryImplementor extends JcrSessionFactory {
 
 	/**
 	 * Obtain the identifier associated with this session.

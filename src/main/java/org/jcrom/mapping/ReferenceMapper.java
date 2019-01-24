@@ -33,12 +33,13 @@ import javax.jcr.Value;
 
 import org.jcrom.AnnotationReader;
 import org.jcrom.JcrFile;
-import org.jcrom.Session;
 import org.jcrom.annotations.JcrFileNode;
 import org.jcrom.annotations.JcrReference;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.loader.ProxyFactory;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.NodeFilter;
+import org.jcrom.util.PathUtils;
 import org.jcrom.util.ReflectionUtils;
 
 /**
@@ -49,32 +50,22 @@ import org.jcrom.util.ReflectionUtils;
  */
 class ReferenceMapper {
 
-    private MapperImplementor mapper;
+    private JcrSessionImplementor session;
 
-    public ReferenceMapper(MapperImplementor mapper) {
-        this.mapper = mapper;
+    public ReferenceMapper(JcrSessionImplementor session) {
+    	this.session = session;
     }
 
-    /**
-	 * @return the mapper
-	 */
-	public MapperImplementor getMapper() {
-		return mapper;
-	}
-
-	/**
-	 * @param mapper the mapper to set
-	 */
-	public void setMapper(MapperImplementor mapper) {
-		this.mapper = mapper;
-	}
-
-	public TypeHandler getTypeHandler() {
-        return getMapper().getTypeHandler();
+    private MapperImplementor getMapper() {
+    	return session.getMapper();
     }
     
-    public AnnotationReader getAnnotationReader() {
-        return getMapper().getAnnotationReader();
+	private TypeHandler getTypeHandler() {
+        return session.getTypeHandler();
+    }
+    
+    private AnnotationReader getAnnotationReader() {
+        return session.getAnnotationReader();
     }
     
     private String getPropertyName(Field field) {
@@ -86,18 +77,18 @@ class ReferenceMapper {
         return name;
     }
 
-    private List<Value> getReferenceValues(List<?> references, Session session, JcrReference jcrReference) throws IllegalAccessException, RepositoryException {
+    private List<Value> getReferenceValues(List<?> references, JcrReference jcrReference) throws IllegalAccessException, RepositoryException {
         List<Value> refValues = new ArrayList<Value>();
         for (Object reference : references) {
             if (jcrReference.byPath()) {
-                String referencePath = mapper.getNodePath(reference);
+                String referencePath = getMapper().getNodePath(reference);
                 if (referencePath != null && !referencePath.equals("")) {
                     if (session.hasNode(referencePath)) {
                         refValues.add(session.createValue(referencePath));
                     }
                 }
             } else {
-                String referenceId = mapper.getNodeId(reference);
+                String referenceId = getMapper().getNodeId(reference);
                 if (referenceId != null && !referenceId.equals("")) {
                     Node referencedNode = session.getNodeById(referenceId);
                     Value value;
@@ -118,7 +109,7 @@ class ReferenceMapper {
         JcrReference jcrReference = getAnnotationReader().getAnnotation(field, JcrReference.class);
         Object referenceObject = getTypeHandler().getObject(field, obj);
         if (referenceObject != null) {
-            referenceObject = mapper.clearCglib(referenceObject);
+            referenceObject = getMapper().clearCglib(referenceObject);
         }
 
         if (referenceObject != null) {
@@ -139,7 +130,7 @@ class ReferenceMapper {
             node.getSession().save();
         }
         if (references != null && !references.isEmpty()) {
-            List<Value> refValues = getReferenceValues(references, node.getSession(), jcrReference);
+            List<Value> refValues = getReferenceValues(references, jcrReference);
             if (!refValues.isEmpty()) {
                 node.setProperty(propertyName, refValues.toArray(new Value[refValues.size()]));
             } else if (node.hasProperty(propertyName)) {
@@ -153,17 +144,16 @@ class ReferenceMapper {
     private void mapSingleReference(JcrReference jcrReference, Object referenceObject, Node containerNode, String propertyName) throws IllegalAccessException, RepositoryException {
 
         if (jcrReference.byPath()) {
-            String referencePath = mapper.getNodePath(referenceObject);
+            String referencePath = getMapper().getNodePath(referenceObject);
             if (referencePath != null && !referencePath.equals("")) {
                 if (containerNode.getSession().getRootNode().hasNode(PathUtils.relativePath(referencePath))) {
                     containerNode.setProperty(propertyName, containerNode.getSession().getValueFactory().createValue(referencePath));
                 }
             }
         } else {
-            String referenceId = mapper.getNodeId(referenceObject);
+            String referenceId = getMapper().getNodeId(referenceObject);
             if (referenceId != null && !referenceId.equals("")) {
-                //Node referencedNode = containerNode.getSession().getNodeByUUID(referenceUUID);
-                Node referencedNode = PathUtils.getNodeById(referenceId, containerNode.getSession());
+                Node referencedNode = session.getNodeById(referenceId);
                 if (jcrReference.weak()) {
                     containerNode.setProperty(propertyName, containerNode.getSession().getValueFactory().createValue(referencedNode, true));
                 } else {
@@ -199,7 +189,7 @@ class ReferenceMapper {
                 String key = (String) entry.getKey();
                 if (getTypeHandler().isList(paramClass)) {
                     List<?> references = (List<?>) entry.getValue();
-                    List<Value> refValues = getReferenceValues(references, referenceContainer.getSession(), jcrReference);
+                    List<Value> refValues = getReferenceValues(references, jcrReference);
                     if (refValues != null && !refValues.isEmpty()) {
                         referenceContainer.setProperty(key, refValues.toArray(new Value[refValues.size()]));
                     }
@@ -241,7 +231,7 @@ class ReferenceMapper {
         setReferenceProperties(field, obj, node, nodeFilter);
     }
 
-    private Node getSingleReferencedNode(JcrReference jcrReference, Value value, Session session) throws RepositoryException {
+    private Node getSingleReferencedNode(JcrReference jcrReference, Value value) throws RepositoryException {
         if (jcrReference.byPath()) {
             if (session.hasNode(value.getString())) {
                 return session.getNode(value.getString());
@@ -252,7 +242,7 @@ class ReferenceMapper {
         return null;
     }
 
-    Object createReferencedObject(Field field, Value value, Object obj, Session session, Class<?> referenceObjClass, int depth, NodeFilter nodeFilter) throws ClassNotFoundException, InstantiationException, RepositoryException, IllegalAccessException, IOException {
+    Object createReferencedObject(Field field, Value value, Object obj, Class<?> referenceObjClass, int depth, NodeFilter nodeFilter) throws ClassNotFoundException, InstantiationException, RepositoryException, IllegalAccessException, IOException {
 
         JcrReference jcrReference = getAnnotationReader().getAnnotation(field, JcrReference.class);
         Node referencedNode = null;
@@ -266,17 +256,17 @@ class ReferenceMapper {
         }
 
         if (referencedNode != null) {
-            Object referencedObject = mapper.createInstanceForNode(referenceObjClass, referencedNode);
+            Object referencedObject = getMapper().createInstanceForNode(referenceObjClass, referencedNode);
             if (nodeFilter.isIncluded(field.getName(), depth)) {
                 // load and map the object, we don't send the current object as parent
-                referencedObject = mapper.mapNodeToClass(referencedObject, referencedNode, nodeFilter, null, depth + 1);
+                referencedObject = getMapper().mapNodeToClass(referencedObject, referencedNode, nodeFilter, null, depth + 1);
             } else {
                 if (jcrReference.byPath()) {
                     // just store the path
-                    mapper.setNodePath(referencedObject, value.getString());
+                	getMapper().setNodePath(referencedObject, value.getString());
                 } else {
                     // just store the Identifier
-                    mapper.setId(referencedObject, value.getString());
+                	getMapper().setId(referencedObject, value.getString());
                 }
             }
             // support JcrFileNode annotation for references
@@ -304,7 +294,7 @@ class ReferenceMapper {
             }
 
             for (Value value : refValues) {
-                Object referencedObject = createReferencedObject(field, value, obj, node.getSession(), referenceObjClass, depth, nodeFilter);
+                Object referencedObject = createReferencedObject(field, value, obj, referenceObjClass, depth, nodeFilter);
                 references.add(referencedObject);
             }
 
@@ -326,7 +316,7 @@ class ReferenceMapper {
                     if (getTypeHandler().isList(mapParamClass)) {
                         if (jcrReference.lazy()) {
                         	// lazy loading
-                        	references.put(p.getName(), ProxyFactory.createReferenceListProxy(mapParamClass, obj, containerNode.getPath(), p.getName(), mapper, depth, nodeFilter, field));
+                        	references.put(p.getName(), ProxyFactory.createReferenceListProxy(session, mapParamClass, obj, containerNode.getPath(), p.getName(), depth, nodeFilter, field));
                         } else {
                         	// eager loading
                             references.put(p.getName(), getReferenceList(field, p.getName(), mapParamClass, containerNode, obj, depth, nodeFilter));
@@ -334,11 +324,11 @@ class ReferenceMapper {
                     } else {
                         if (jcrReference.lazy()) {
                         	// lazy loading
-                            Node referencedNode = getSingleReferencedNode(jcrReference, p.getValue(), node.getSession());
-                            references.put(p.getName(), ProxyFactory.createReferenceProxy(mapper.findClassFromNode(mapParamClass, referencedNode), obj, containerNode.getPath(), p.getName(), mapper, depth, nodeFilter, field));
+                            Node referencedNode = getSingleReferencedNode(jcrReference, p.getValue());
+                            references.put(p.getName(), ProxyFactory.createReferenceProxy(session, getMapper().findClassFromNode(mapParamClass, referencedNode), obj, containerNode.getPath(), p.getName(), depth, nodeFilter, field));
                         } else {
                         	// eager loading
-                        	references.put(p.getName(), createReferencedObject(field, p.getValue(), obj, containerNode.getSession(), mapParamClass, depth, nodeFilter));
+                        	references.put(p.getName(), createReferencedObject(field, p.getValue(), obj, mapParamClass, depth, nodeFilter));
                         }
                     }
                 }
@@ -358,7 +348,7 @@ class ReferenceMapper {
             List value = null;
             if (jcrReference.lazy()) {
                 // lazy loading
-                value = ProxyFactory.createReferenceListProxy(referenceObjClass, obj, node.getPath(), propertyName, mapper, depth, nodeFilter, field);
+                value = ProxyFactory.createReferenceListProxy(session, referenceObjClass, obj, node.getPath(), propertyName, depth, nodeFilter, field);
             } else {
                 // eager loading
                 value = getReferenceList(field, propertyName, referenceObjClass, node, obj, depth, nodeFilter);
@@ -376,9 +366,9 @@ class ReferenceMapper {
                 Class<?> referenceObjClass = getTypeHandler().getType(field.getType(), field.getGenericType(), obj);
                 Object value = null;
                 if (jcrReference.lazy()) {
-                    value = ProxyFactory.createReferenceProxy(referenceObjClass, obj, node.getPath(), propertyName, mapper, depth, nodeFilter, field);
+                    value = ProxyFactory.createReferenceProxy(session, referenceObjClass, obj, node.getPath(), propertyName, depth, nodeFilter, field);
                 } else {
-                    value = createReferencedObject(field, node.getProperty(propertyName).getValue(), obj, node.getSession(), referenceObjClass, depth, nodeFilter);
+                    value = createReferencedObject(field, node.getProperty(propertyName).getValue(), obj, referenceObjClass, depth, nodeFilter);
                 }
                 getTypeHandler().setObject(field, obj, value);
             }

@@ -22,7 +22,7 @@ package org.jcrom;
  * database state with session state by detecting state changes
  * and executing SQL statements.
  *
- * @see Session#setFlushMode(FlushMode)
+ * @see JcrSession#setFlushMode(FlushMode)
  *
  * @author Gavin King
  */

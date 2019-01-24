@@ -28,14 +28,14 @@ import javax.jcr.Node;
 import javax.jcr.SimpleCredentials;
 
 import org.jcrom.JcrFile;
-import org.jcrom.SessionFactory;
+import org.jcrom.JcrSessionFactory;
 import org.jcrom.dao.TreeDAO;
 import org.jcrom.entities.DynamicObject;
 import org.jcrom.entities.LazyInterface;
 import org.jcrom.entities.LazyObject;
 import org.jcrom.entities.Tree;
 import org.jcrom.entities.TreeNode;
-import org.jcrom.internal.SessionFactoryImpl;
+import org.jcrom.internal.JcrSessionFactoryImpl;
 import org.junit.Test;
 
 /**
@@ -216,7 +216,7 @@ public class TestLazyLoading extends TestAbstract {
     @Test
     public void testLazyLoadingWithSessionFactory() throws Exception {
 
-        SessionFactory sessionFactory = new SessionFactoryImpl(repo, new SimpleCredentials(userID, password));
+        JcrSessionFactory sessionFactory = new JcrSessionFactoryImpl(repo, new SimpleCredentials(userID, password));
 
         jcrom.map(Tree.class).map(LazyObject.class);
         jcrom.setSessionFactory(sessionFactory);

@@ -21,8 +21,7 @@ import java.lang.reflect.Field;
 
 import javax.jcr.Node;
 
-import org.jcrom.Session;
-import org.jcrom.mapping.Mapper;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.util.NodeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +44,8 @@ class ReferenceListLoader extends AbstractLazyLoader {
     private final NodeFilter nodeFilter;
     private final Field field;
 
-    ReferenceListLoader(Class<?> objClass, Object parentObject, String nodePath, String propertyName, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
-        super(mapper);
+    ReferenceListLoader(JcrSessionImplementor session, Class<?> objClass, Object parentObject, String nodePath, String propertyName, int depth, NodeFilter nodeFilter, Field field) {
+    	super(session);
         this.objClass = objClass;
         this.parentObject = parentObject;
         this.nodePath = nodePath;
@@ -57,10 +56,10 @@ class ReferenceListLoader extends AbstractLazyLoader {
     }
 
     @Override
-    protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
+    protected Object doLoadObject(JcrSessionImplementor session) throws Exception {
     	LOGGER.debug("Lazy loading file list for: {} {}", nodePath, propertyName);
 
     	Node node = session.getNode(nodePath);
-        return mapper.getReferenceList(field, propertyName, objClass, node, parentObject, depth, nodeFilter);
+        return session.getMapper().getReferenceList(field, propertyName, objClass, node, parentObject, depth, nodeFilter);
     }
 }

@@ -42,7 +42,7 @@ import org.jcrom.annotations.JcrVersionCreated;
 import org.jcrom.annotations.JcrVersionName;
 import org.jcrom.converter.Converter;
 import org.jcrom.converter.DefaultConverter;
-import org.jcrom.engine.spi.SessionFactoryImplementor;
+import org.jcrom.engine.spi.JcrSessionFactoryImplementor;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.ReflectionUtils;
 import org.slf4j.Logger;
@@ -57,17 +57,17 @@ import org.slf4j.LoggerFactory;
 public class Validator {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Validator.class);
 
-	private SessionFactoryImplementor sessionFactory;
+	private JcrSessionFactoryImplementor sessionFactory;
 
-    public Validator(SessionFactoryImplementor sessionFactory) {
+    public Validator(JcrSessionFactoryImplementor sessionFactory) {
     	this.sessionFactory = sessionFactory;
     }
     
-    public SessionFactoryImplementor getSessionFactory() {
+    public JcrSessionFactoryImplementor getSessionFactory() {
 		return sessionFactory;
 	}
 
-	public void setSessionFactory(SessionFactoryImplementor sessionFactory) {
+	public void setSessionFactory(JcrSessionFactoryImplementor sessionFactory) {
 		this.sessionFactory = sessionFactory;
 	}
 

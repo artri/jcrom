@@ -21,8 +21,7 @@ import java.lang.reflect.Field;
 
 import javax.jcr.Node;
 
-import org.jcrom.Session;
-import org.jcrom.mapping.Mapper;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.util.NodeFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +44,8 @@ class ReferenceLoader extends AbstractLazyLoader {
     private final NodeFilter nodeFilter;
     private final Field field;
 
-    ReferenceLoader(Class<?> objClass, Object parentObject, String nodePath, String propertyName, Mapper mapper, int depth, NodeFilter nodeFilter, Field field) {
-        super(mapper);
+    ReferenceLoader(JcrSessionImplementor session, Class<?> objClass, Object parentObject, String nodePath, String propertyName, int depth, NodeFilter nodeFilter, Field field) {
+    	super(session);
         this.objClass = objClass;
         this.parentObject = parentObject;
         this.nodePath = nodePath;
@@ -57,10 +56,10 @@ class ReferenceLoader extends AbstractLazyLoader {
     }
 
     @Override
-    protected Object doLoadObject(Session session, Mapper mapper) throws Exception {
+    protected Object doLoadObject(JcrSessionImplementor session) throws Exception {
     	LOGGER.debug("Lazy loading single reference for: {} {}", nodePath, propertyName);
 
         Node node = session.getNode(nodePath);
-        return mapper.createReferencedObject(field, node.getProperty(propertyName).getValue(), parentObject, session, objClass, depth, nodeFilter);
+        return session.getMapper().createReferencedObject(field, node.getProperty(propertyName).getValue(), parentObject, objClass, depth, nodeFilter);
     }
 }

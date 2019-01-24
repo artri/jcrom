@@ -23,10 +23,9 @@ import java.io.Serializable;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.Value;
 
-public interface Session extends Serializable, AutoCloseable, Closeable {
+public interface JcrSession extends Serializable, AutoCloseable, Closeable {
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//~~~~~~~~~~ SharedSessionContract
 	
@@ -77,9 +76,9 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 * Get the session factory which created this session.
 	 *
 	 * @return The session factory.
-	 * @see SessionFactory
+	 * @see JcrSessionFactory
 	 */
-	SessionFactory getSessionFactory();
+	JcrSessionFactory getSessionFactory();
 	
 	/**
 	 * Force this session to flush. Must be called at the end of a
@@ -136,7 +135,7 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 * Will entities and proxies that are loaded into this session be made read-only by default?
 	 *
 	 * To determine the read-only/modifiable setting for a particular entity or proxy:
-	 * @see Session#isReadOnly(Object)
+	 * @see JcrSession#isReadOnly(Object)
 	 *
 	 * @return true, loaded entities/proxies will be made read-only by default; 
 	 *         false, loaded entities/proxies will be made modifiable by default. 
@@ -157,7 +156,7 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 *
 	 * To change the read-only/modifiable setting for a particular entity
 	 * or proxy that is already in this session:
-	 * @see Session#setReadOnly(Object,boolean)
+	 * @see JcrSession#setReadOnly(Object,boolean)
 	 *
 	 *
 	 * @param readOnly true, the default for loaded entities/proxies is read-only;
@@ -189,7 +188,7 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 *
 	 * To get the default read-only/modifiable setting used for
 	 * entities and proxies that are loaded into the session:
-	 * @see org.jcrom.Session#isDefaultReadOnly()
+	 * @see org.jcrom.JcrSession#isDefaultReadOnly()
 	 *
 	 * @param entityOrProxy an entity or proxy
 	 * @return {@code true} if the entity or proxy is read-only, {@code false} if the entity or proxy is modifiable.
@@ -206,22 +205,13 @@ public interface Session extends Serializable, AutoCloseable, Closeable {
 	 * 
 	 * To set the default read-only/modifiable setting used for
 	 * entities and proxies that are loaded into the session:
-	 * @see org.jcrom.Session#setDefaultReadOnly(boolean)
+	 * @see org.jcrom.JcrSession#setDefaultReadOnly(boolean)
 	 * 
 	 * @param entityOrProxy an entity or proxy
 	 * @param readOnly {@code true} if the entity or proxy should be made read-only; {@code false} if the entity or
 	 * proxy should be made modifiable
 	 */
 	void setReadOnly(Object entityOrProxy, boolean readOnly);
-	
-	/*
-	 * Convenience access to the {@link TypeHelper} associated with this session's {@link SessionFactory}.
-	 * <p/>
-	 * Equivalent to calling {@link #getSessionFactory()}.{@link SessionFactory#getTypeHelper getTypeHelper()}
-	 *
-	 * @return The {@link TypeHelper} associated with this session's {@link SessionFactory}
-	 */
-	//TypeHelper getTypeHelper();
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	

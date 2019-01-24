@@ -19,7 +19,7 @@ package org.jcrom.internal;
 
 import java.io.Serializable;
 import org.jcrom.JcrRuntimeException;
-import org.jcrom.Session;
+import org.jcrom.JcrSession;
 
 public interface CurrentSessionContext extends Serializable {
 	
@@ -30,5 +30,5 @@ public interface CurrentSessionContext extends Serializable {
 	 * @return The current session.
 	 * @throws JcrRuntimeException Typically indicates an issue locating or creating the current session.
 	 */
-	public Session getCurrentSession() throws JcrRuntimeException;
+	public JcrSession getCurrentSession() throws JcrRuntimeException;
 }

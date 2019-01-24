@@ -27,7 +27,7 @@ import javax.jcr.SimpleCredentials;
 
 import org.apache.jackrabbit.core.TransientRepository;
 import org.jcrom.Jcrom;
-import org.jcrom.internal.SessionFactoryImpl;
+import org.jcrom.internal.JcrSessionFactoryImpl;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -60,7 +60,7 @@ public class TestAbstract {
         repo = new TransientRepository();
         
         jcrom = new Jcrom(true, true);
-        jcrom.setSessionFactory(new SessionFactoryImpl(repo, new SimpleCredentials(userID, password)));    	
+        jcrom.setSessionFactory(new JcrSessionFactoryImpl(repo, new SimpleCredentials(userID, password)));    	
     }
     
     @AfterClass

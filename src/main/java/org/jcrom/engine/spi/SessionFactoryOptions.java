@@ -22,7 +22,7 @@ public interface SessionFactoryOptions {
 	
 	/**
 	 * Get the UUID unique to this SessionFactoryOptions.  Will be the
-	 * same value available as {@link SessionFactoryImplementor#getUuid()}.
+	 * same value available as {@link JcrSessionFactoryImplementor#getUuid()}.
 	 *
 	 * @apiNote The value is generated as a {@link java.util.UUID}, but kept
 	 * as a String.
@@ -30,7 +30,7 @@ public interface SessionFactoryOptions {
 	 * @return The UUID for this SessionFactory.
 	 *
 	 * @see org.hibernate.internal.SessionFactoryRegistry#getSessionFactory
-	 * @see SessionFactoryImplementor#getUuid
+	 * @see JcrSessionFactoryImplementor#getUuid
 	 */
 	String getUUID();
 	

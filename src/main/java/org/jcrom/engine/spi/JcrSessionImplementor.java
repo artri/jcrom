@@ -17,10 +17,14 @@
  */
 package org.jcrom.engine.spi;
 
-import org.jcrom.Session;
+import org.jcrom.AnnotationReader;
+import org.jcrom.JcrSession;
+import org.jcrom.JcrSessionFactory;
 import org.jcrom.Transaction;
+import org.jcrom.mapping.MapperImplementor;
+import org.jcrom.type.TypeHandler;
 
-public interface SessionImplementor extends Session {
+public interface JcrSessionImplementor extends JcrSession {
 	//===== SharedSessionContractImplementor =====
 	SessionEventListenerManager getEventListenerManager();
 	
@@ -99,6 +103,21 @@ public interface SessionImplementor extends Session {
 	
 	//===== SessionImplementor =====
 	@Override
-	SessionFactoryImplementor getSessionFactory();
+	JcrSessionFactoryImplementor getSessionFactory();
 	
+	boolean isCleanNames();
+	boolean isDynamicInstantiation();
+	
+	String getCleanName(String name);
+	
+	/**
+	 * Convenience access to the {@link TypeHandler} associated with this session's {@link SessionFactory}.
+	 * <p/>
+	 * Equivalent to calling {@link #getSessionFactory()}.{@link SessionFactory#getTypeHandler getTypeHandler()}
+	 *
+	 * @return The {@link TypeHandler} associated with this session's {@link JcrSessionFactory}
+	 */
+	TypeHandler getTypeHandler();
+	AnnotationReader getAnnotationReader();
+	MapperImplementor getMapper();
 }

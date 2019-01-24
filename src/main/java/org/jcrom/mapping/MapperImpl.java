@@ -43,7 +43,6 @@ import javax.jcr.version.VersionManager;
 import org.jcrom.AnnotationReader;
 import org.jcrom.JcrFile;
 import org.jcrom.JcrMappingException;
-import org.jcrom.Session;
 import org.jcrom.annotations.JcrBaseVersionCreated;
 import org.jcrom.annotations.JcrBaseVersionName;
 import org.jcrom.annotations.JcrCheckedout;
@@ -63,7 +62,7 @@ import org.jcrom.annotations.JcrVersionCreated;
 import org.jcrom.annotations.JcrVersionName;
 import org.jcrom.callback.DefaultJcromCallback;
 import org.jcrom.callback.JcromCallback;
-import org.jcrom.engine.spi.SessionFactoryImplementor;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.JcrUtils;
 import org.jcrom.util.NodeFilter;
@@ -81,19 +80,15 @@ public class MapperImpl implements MapperImplementor {
 	private static final String FN_CGLIB_CALLBACK = "CGLIB$CALLBACK_0";
     private static final String FN_CGLIB_LAZY_LOADER = "CGLIB$LAZY_LOADER_0";
 
-    private SessionFactoryImplementor sessionFactory;
-    
-    /** Set of classes that have been validated for mapping by this mapper */
-    private final CopyOnWriteArraySet<Class<?>> mappedClasses = new CopyOnWriteArraySet<Class<?>>();
+    private final JcrSessionImplementor session;
 
     private final PropertyMapper propertyMapper;
-
     private final ReferenceMapper referenceMapper;
-
     private final FileNodeMapper fileNodeMapper;
-
     private final ChildNodeMapper childNodeMapper;
 
+    /** Set of classes that have been validated for mapping by this mapper */
+    private final CopyOnWriteArraySet<Class<?>> mappedClasses = new CopyOnWriteArraySet<Class<?>>();    
     private final ThreadLocal<Map<HistoryKey, Object>> history = new ThreadLocal<Map<HistoryKey, Object>>();
 
     /**
@@ -101,22 +96,18 @@ public class MapperImpl implements MapperImplementor {
      * 
      * @param sessionFactory
      */    
-    public MapperImpl(SessionFactoryImplementor sessionFactory) {
-    	this.sessionFactory = sessionFactory;
-        this.propertyMapper = new PropertyMapper(this);
-        this.referenceMapper = new ReferenceMapper(this);
-        this.fileNodeMapper = new FileNodeMapper(this);
-        this.childNodeMapper = new ChildNodeMapper(this);
+    public MapperImpl(JcrSessionImplementor session) {
+    	this.session = session;
+        this.propertyMapper = new PropertyMapper(session);
+        this.referenceMapper = new ReferenceMapper(session);
+        this.fileNodeMapper = new FileNodeMapper(session);
+        this.childNodeMapper = new ChildNodeMapper(session);
     }
     
-    public SessionFactoryImplementor getSessionFactory() {
-		return sessionFactory;
+    public JcrSessionImplementor getSession() {
+		return session;
 	}
-
-	public void setSessionFactory(SessionFactoryImplementor sessionFactory) {
-		this.sessionFactory = sessionFactory;
-	}
-    
+   
 	public void clearHistory() {
         history.remove();
     }
@@ -134,11 +125,11 @@ public class MapperImpl implements MapperImplementor {
     }
 
     public boolean isCleanNames() {
-        return getSessionFactory().getOptions().isCleanNames();
+        return getSession().isCleanNames();
     }
 
     public boolean isDynamicInstantiation() {
-        return getSessionFactory().getOptions().isDynamicInstantiation();
+        return getSession().isDynamicInstantiation();
     }
 
     private Class<?> getClassForName(String className) {
@@ -331,11 +322,7 @@ public class MapperImpl implements MapperImplementor {
     }
     
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //~~~~~~ Mapper 
-    
-    public Session getSession() {
-    	return getSessionFactory().getCurrentSession();
-    }
+    //~~~~~~ Mapper
     
     @Override
 	public List<?> getChildrenList(Class<?> childObjClass, Node childrenContainer, Object parentObj, int depth, NodeFilter nodeFilter, JcrChildNode jcrChildNode)
@@ -368,9 +355,9 @@ public class MapperImpl implements MapperImplementor {
     }
 
     @Override
-    public Object createReferencedObject(Field field, Value value, Object obj, Session session, Class<?> referenceObjClass, int depth, NodeFilter nodeFilter) 
+    public Object createReferencedObject(Field field, Value value, Object obj, Class<?> referenceObjClass, int depth, NodeFilter nodeFilter) 
     		throws ClassNotFoundException, InstantiationException, RepositoryException, IllegalAccessException, IOException {
-    	return referenceMapper.createReferencedObject(field, value, obj, session, referenceObjClass, depth, nodeFilter);
+    	return referenceMapper.createReferencedObject(field, value, obj, referenceObjClass, depth, nodeFilter);
     }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -378,22 +365,12 @@ public class MapperImpl implements MapperImplementor {
     
     @Override
     public TypeHandler getTypeHandler() {
-        return getSessionFactory().getTypeHandler();
+        return getSession().getTypeHandler();
     }
     
     @Override
     public AnnotationReader getAnnotationReader() {
-        return getSessionFactory().getAnnotationReader();
-    }
-    
-    @Override
-    public String getCleanName(String name) {
-        if (name == null) {
-            throw new JcrMappingException("Node name is null");
-        }
-        
-        //TODO: reuse from SessionImpl.createValidName
-        return isCleanNames() ? PathUtils.createValidName(name) : name;
+        return getSession().getAnnotationReader();
     }
     
     @Override
@@ -610,7 +587,7 @@ public class MapperImpl implements MapperImplementor {
         JcrNode jcrNode = getTypeHandler().getJcrNodeAnnotation(entity.getClass(), entity.getClass().getGenericSuperclass(), entity);
         if (createNode) {
             // add node
-            String nodeName = getCleanName(getNodeName(entity));
+            String nodeName = session.getCleanName(getNodeName(entity));
             node = action.doAddNode(parentNode, nodeName, jcrNode, entity);
 
             // add mixin types
@@ -749,7 +726,7 @@ public class MapperImpl implements MapperImplementor {
         }
 
         // if name is different, then we move the node
-        if (!node.getName().equals(getCleanName(getNodeName(entity)))) {
+        if (!node.getName().equals(session.getCleanName(getNodeName(entity)))) {
             boolean isVersionable = JcrUtils.hasMixinType(node, "mix:versionable") || JcrUtils.hasMixinType(node, NodeType.MIX_VERSIONABLE);
             Node parentNode = node.getParent();
 
@@ -760,7 +737,7 @@ public class MapperImpl implements MapperImplementor {
             }
 
             // move node
-            String nodeName = getCleanName(getNodeName(entity));
+            String nodeName = session.getCleanName(getNodeName(entity));
             action.doMoveNode(parentNode, node, nodeName, jcrNode, entity);
 
             if (isVersionable) {

@@ -7,7 +7,7 @@ public interface SessionBuilder {
 	 *
 	 * @return The session
 	 */
-	Session openSession();
+	JcrSession openSession();
 	
 	/**
 	 * Adds a specific connection to the session options.

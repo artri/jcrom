@@ -20,8 +20,7 @@ package org.jcrom.loader;
 import net.sf.cglib.proxy.LazyLoader;
 
 import org.jcrom.JcrMappingException;
-import org.jcrom.Session;
-import org.jcrom.mapping.Mapper;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,19 +32,16 @@ import org.slf4j.LoggerFactory;
 abstract class AbstractLazyLoader implements LazyLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractLazyLoader.class);
 
-    private final Mapper mapper;
+    private final JcrSessionImplementor session;
 
-    public AbstractLazyLoader(Mapper mapper) {
-        this.mapper = mapper;
+    public AbstractLazyLoader(JcrSessionImplementor session) {
+    	this.session = session;
     }
 
     @Override
     public final Object loadObject() throws JcrMappingException, Exception {
-    	LOGGER.trace("loadObject");
-    	Session session = mapper.getSessionFactory().getCurrentSession();
-        // Load object
-        return doLoadObject(session, mapper);
+        return doLoadObject(session);
     }
 
-    protected abstract Object doLoadObject(Session session, Mapper mapper) throws Exception;
+    protected abstract Object doLoadObject(JcrSessionImplementor session) throws Exception;
 }

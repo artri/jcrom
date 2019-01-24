@@ -8,16 +8,18 @@ import javax.jcr.RepositoryException;
 
 import org.jcrom.AnnotationReader;
 import org.jcrom.callback.JcromCallback;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.NodeFilter;
 
 public interface MapperImplementor extends Mapper {
 
+	@Override
+	JcrSessionImplementor getSession();
+	
 	TypeHandler getTypeHandler();
 	
 	AnnotationReader getAnnotationReader();
-	
-	String getCleanName(String name);
 	
 	Object createInstanceForNode(Class<?> objClass, Node node) throws RepositoryException, IllegalAccessException, ClassNotFoundException, InstantiationException;
 	Object findEntityByPath(List<?> entities, String path) throws IllegalAccessException;

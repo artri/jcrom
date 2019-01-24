@@ -28,17 +28,18 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 
+import org.jcrom.AnnotationReader;
 import org.jcrom.FlushMode;
 import org.jcrom.JcrMappingException;
 import org.jcrom.JcrRuntimeException;
-import org.jcrom.Session;
+import org.jcrom.JcrSession;
 import org.jcrom.SessionEventListener;
-import org.jcrom.SessionFactory;
+import org.jcrom.JcrSessionFactory;
 import org.jcrom.Transaction;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.callback.JcromCallback;
-import org.jcrom.engine.spi.SessionFactoryImplementor;
-import org.jcrom.engine.spi.SessionImplementor;
+import org.jcrom.engine.spi.JcrSessionFactoryImplementor;
+import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.mapping.Mapper;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.NodeFilter;
@@ -50,16 +51,16 @@ import org.slf4j.LoggerFactory;
  * Default implementation of a Session.
  * <p/>
  * Exposes two interfaces:<ul>
- * <li>{@link org.jcrom.Session} to the application</li>
+ * <li>{@link org.jcrom.JcrSession} to the application</li>
  * </ul>
  * <p/>
  * This class is not thread-safe.
  */
-public class SessionImpl implements SessionImplementor {
+public class JcrSessionImpl implements JcrSessionImplementor {
 	private static final long serialVersionUID = -8254588340258340383L;
-	private static final Logger LOGGER = LoggerFactory.getLogger(SessionImpl.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(JcrSessionImpl.class);
 	
-	private transient SessionFactoryImpl sessionFactory;
+	private transient JcrSessionFactoryImpl sessionFactory;
 	private String uuid;
 	private FlushMode flushMode;
 	
@@ -75,7 +76,7 @@ public class SessionImpl implements SessionImplementor {
 	
 	private javax.jcr.Session jcrSession;
 	
-	public SessionImpl(SessionFactoryImpl sessionFactory, SessionCreationOptions options) {
+	public JcrSessionImpl(JcrSessionFactoryImpl sessionFactory, SessionCreationOptions options) {
 		this.sessionFactory = sessionFactory;
 		this.flushMode = FlushMode.AUTO;
 		this.autoClear = options.shouldAutoClear();
@@ -91,7 +92,7 @@ public class SessionImpl implements SessionImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.Session#JcrRuntimeException()
+	 * @see org.jcrom.JcrSession#JcrRuntimeException()
 	 */	
 	@Override
 	public void close() throws JcrRuntimeException {
@@ -111,7 +112,7 @@ public class SessionImpl implements SessionImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.Session#isOpened()
+	 * @see org.jcrom.JcrSession#isOpened()
 	 */		
 	@Override
 	public boolean isOpened() {
@@ -133,7 +134,7 @@ public class SessionImpl implements SessionImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.Session#isClosed()
+	 * @see org.jcrom.JcrSession#isClosed()
 	 */
 	@Override
 	public boolean isClosed() {
@@ -142,7 +143,7 @@ public class SessionImpl implements SessionImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.Session#beginTransaction()
+	 * @see org.jcrom.JcrSession#beginTransaction()
 	 */	
 	@Override
 	public Transaction beginTransaction() {
@@ -155,7 +156,7 @@ public class SessionImpl implements SessionImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.Session#getTransaction()
+	 * @see org.jcrom.JcrSession#getTransaction()
 	 */	
 	@Override
 	public Transaction getTransaction() {
@@ -163,16 +164,7 @@ public class SessionImpl implements SessionImplementor {
 	}
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	//~~~~~~~~~~ Session 	
-	
-	/**
-	 * (non-Javadoc)
-	 * @see org.jcrom.Session#getSessionFactory()
-	 */	
-	@Override
-	public SessionFactoryImplementor getSessionFactory() {
-		return this.sessionFactory;
-	}
+	//~~~~~~~~~~ Session
 
 	@Override
 	public void flush() throws JcrRuntimeException {
@@ -209,7 +201,7 @@ public class SessionImpl implements SessionImplementor {
 		
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.Session#isDirty()
+	 * @see org.jcrom.JcrSession#isDirty()
 	 */
 	@Override
 	public boolean isDirty() throws JcrRuntimeException {
@@ -238,7 +230,7 @@ public class SessionImpl implements SessionImplementor {
 	
 	/**
 	 * (non-Javadoc)
-	 * @see org.jcrom.Session#addEventListeners()
+	 * @see org.jcrom.JcrSession#addEventListeners()
 	 */		
 	@Override
 	public void addEventListeners(SessionEventListener... listeners) {
@@ -280,7 +272,7 @@ public class SessionImpl implements SessionImplementor {
 		//persistenceContext.setReadOnly(entity, readOnly);
 		LOGGER.warn("persistenceContext.setReadOnly not implemented yet");
 	}
-	
+
 	/**
 	 * @return the uuid
 	 */
@@ -399,7 +391,57 @@ public class SessionImpl implements SessionImplementor {
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.JcrSession#getSessionFactory()
+	 */	
+	@Override
+	public JcrSessionFactoryImplementor getSessionFactory() {
+		return this.sessionFactory;
+	}
+	
+	
+	/** (non-Javadoc)
+	 * @see org.jcrom.engine.spi.JcrSessionImplementor#isCleanNames()
+	 */
+	@Override
+	public boolean isCleanNames() {
+		return getSessionFactory().getOptions().isCleanNames();
+	}
+
+	/** (non-Javadoc)
+	 * @see org.jcrom.engine.spi.JcrSessionImplementor#isDynamicInstantiation()
+	 */
+	@Override
+	public boolean isDynamicInstantiation() {
+		return getSessionFactory().getOptions().isDynamicInstantiation();
+	}
+
+    @Override
+    public String getCleanName(String name) {
+        if (name == null) {
+            throw new JcrMappingException("Node name is null");
+        }
+        
+        return isCleanNames() ? PathUtils.createValidName(name) : name;
+    }
     
+	/** (non-Javadoc)
+	 * @see org.jcrom.JcrSession#getTypeHandler()
+	 */
+	@Override
+	public TypeHandler getTypeHandler() {
+		return getSessionFactory().getTypeHandler();
+	}
+		
+	/** (non-Javadoc)
+	 * @see org.jcrom.engine.spi.JcrSessionImplementor#getAnnotationReader()
+	 */
+	@Override
+	public AnnotationReader getAnnotationReader() {
+		return getSessionFactory().getAnnotationReader();
+	}
+
 	public Mapper getMapper() {
         return getSessionFactory().getMapper();
     }
@@ -412,7 +454,8 @@ public class SessionImpl implements SessionImplementor {
 	@Override
 	public Node getNode(String absolutePath) throws RepositoryException {
         // special case, add directly to the root node
-        return absolutePath.equals("/") ? jcrSession.getRootNode() : jcrSession.getRootNode().getNode(relativePath(absolutePath));
+        return PathUtils.isRootPath(absolutePath) ? jcrSession.getRootNode() 
+        		: jcrSession.getRootNode().getNode(PathUtils.relativePath(absolutePath));
 	}
 	
 	@Override
@@ -423,12 +466,13 @@ public class SessionImpl implements SessionImplementor {
 	@Override
 	public NodeIterator getNodes(String absolutePath) throws RepositoryException {
         // special case, add directly to the root node
-        return absolutePath.equals("/") ? jcrSession.getRootNode().getNodes() : jcrSession.getRootNode().getNodes(relativePath(absolutePath));
+        return PathUtils.isRootPath(absolutePath) ? jcrSession.getRootNode().getNodes() 
+        		: jcrSession.getRootNode().getNodes(PathUtils.relativePath(absolutePath));
     }
 	
 	@Override
 	public boolean hasNode(String referencePath) throws RepositoryException {
-		return jcrSession.getRootNode().hasNode(relativePath(referencePath));
+		return jcrSession.getRootNode().hasNode(PathUtils.relativePath(referencePath));
 	}
 	
 	@Override
@@ -445,47 +489,7 @@ public class SessionImpl implements SessionImplementor {
 	public Value createValue(Node node, boolean weak) throws RepositoryException {
 		return jcrSession.getValueFactory().createValue(node, weak);
 	}
-	
-    /**
-     * Creates a valid JCR node name from the String supplied, by
-     * replacing all non-alphanumeric chars.
-     * 
-     * @param str the input String
-     * @return a valid JCR node name for the String
-     */
-    public static String createValidName(String str) {
-        return replaceNonAlphanumeric(str, '_');
-    }
-    
-    public static String relativePath(String absolutePath) {
-        if (absolutePath.charAt(0) == '/') {
-            return absolutePath.substring(1);
-        } else {
-            return absolutePath;
-        }
-    }
-    
-    /**
-     * Replaces occurences of non-alphanumeric characters with a
-     * supplied char. A non-alphanumeric character at the beginning or end
-     * is replaced with ''.
-     */
-    public static String replaceNonAlphanumeric(String str, char subst) {
-        StringBuffer ret = new StringBuffer(str.length());
-        char[] testChars = str.toCharArray();
-        char lastChar = 'A';
-        for (int i = 0; i < testChars.length; i++) {
-            if (Character.isLetterOrDigit(testChars[i]) || testChars[i] == '.' || testChars[i] == ':') {
-                ret.append(testChars[i]);
-                lastChar = testChars[i];
-            } else if (i > 0 && (i + 1) != testChars.length && lastChar != subst) {
-                ret.append(subst);
-                lastChar = subst;
-            }
-        }
-        return ret.toString();
-    }
-    
+	    
     /**
      * Maps the node supplied to an instance of the entity class. Loads all child nodes, to infinite depth.
      * 

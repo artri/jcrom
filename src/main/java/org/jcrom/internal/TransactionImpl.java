@@ -17,7 +17,7 @@
  */
 package org.jcrom.internal;
 
-import org.jcrom.Session;
+import org.jcrom.JcrSession;
 import org.jcrom.Transaction;
 import org.jcrom.TransactionStatus;
 import org.slf4j.Logger;
@@ -26,10 +26,10 @@ import org.slf4j.LoggerFactory;
 public class TransactionImpl implements Transaction {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TransactionImpl.class);
 	
-	private Session session;
+	private JcrSession session;
 	private TransactionStatus status = TransactionStatus.NOT_ACTIVE;
 	
-	public TransactionImpl(Session session) {
+	public TransactionImpl(JcrSession session) {
 		this.session = session;
 	}
 
