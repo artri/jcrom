@@ -24,7 +24,6 @@ import java.util.List;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -39,7 +38,8 @@ import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 
 import org.jcrom.JcrMappingException;
-import org.jcrom.Jcrom;
+import org.jcrom.JcrSession;
+import org.jcrom.JcrSessionFactory;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.callback.JcromCallback;
 import org.jcrom.util.JcrUtils;
@@ -68,7 +68,7 @@ import org.jcrom.util.ReflectionUtils;
  */
 public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
 
-    protected final Jcrom jcrom;
+	private final JcrSessionFactory sessionFactory;
     protected final Class<T> entityClass;
     protected final String[] mixinTypes;
     protected final boolean isVersionable;
@@ -82,10 +82,10 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      * </p>
      * <p>The entityClass is retrieved from {@link ParameterizedType} in the superclass.</p>
      * 
-     * @param jcrom the Jcrom instance to use for object mapping
+     * @param JcrSessionFactory the JcrSessionFactory instance to use for object mapping
      */
-    public AbstractJcrDAO(Jcrom jcrom) {
-        this(null, jcrom, new String[0]);
+    public AbstractJcrDAO(JcrSessionFactory sessionFactory) {
+        this(null, sessionFactory, new String[0]);
     }
 
     /**
@@ -97,8 +97,8 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      * @param entityClass the class handled by this DAO implementation
      * @param jcrom the Jcrom instance to use for object mapping
      */
-    public AbstractJcrDAO(Class<T> entityClass, Jcrom jcrom) {
-        this(entityClass, jcrom, new String[0]);
+    public AbstractJcrDAO(Class<T> entityClass, JcrSessionFactory sessionFactory) {
+        this(entityClass, sessionFactory, new String[0]);
     }
 
     /**
@@ -110,7 +110,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      * @param mixinTypes an array of mixin types to apply to new nodes
      */
     @SuppressWarnings("unchecked")
-    public AbstractJcrDAO(Class<T> entityClass, Jcrom jcrom, String[] mixinTypes) {
+    public AbstractJcrDAO(Class<T> entityClass, JcrSessionFactory sessionFactory, String[] mixinTypes) {
         if (entityClass == null) {
             Class<?> clazz = getClass();
             while (!(clazz.getGenericSuperclass() instanceof ParameterizedType)) {
@@ -120,7 +120,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         } else {
             this.entityClass = entityClass;
         }
-        this.jcrom = jcrom;
+        this.sessionFactory = sessionFactory;
         this.mixinTypes = new String[mixinTypes.length];
         System.arraycopy(mixinTypes, 0, this.mixinTypes, 0, mixinTypes.length);
         this.isVersionable = checkIfVersionable();
@@ -130,12 +130,15 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         return entityClass;
     }
 
-    protected final Session getSession() {
-        return jcrom.getSessionFactory().getCurrentSession();
-    }
-    
-    protected Jcrom getJcrom() {
-        return jcrom;
+    /**
+	 * @return the sessionFactory
+	 */
+	public JcrSessionFactory getSessionFactory() {
+		return sessionFactory;
+	}
+
+	protected final JcrSession getSession() {
+        return getSessionFactory().getCurrentSession();
     }
 
     protected String[] getMixinTypes() {
@@ -162,15 +165,15 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     protected Node getNodeById(String id) throws RepositoryException {
-        return getSession().getNodeByIdentifier(id);
+        return getSession().getNodeById(id);
     }
 
     protected Node getNode(String absolutePath) throws RepositoryException {
-        return PathUtils.getNode(absolutePath, getSession());
+        return getSession().getNode(absolutePath);
     }
 
     protected NodeIterator getNodes(String absolutePath) throws RepositoryException {
-        return PathUtils.getNodes(absolutePath, getSession());
+        return getSession().getNodes(absolutePath);
     }
 
     @Override
@@ -186,20 +189,20 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     private String getParentPath(T entity) {
         try {
             // Set the parent path with a default value, the entity path if it is not null, otherwise the root path "/" 
-            String entityPath = getJcrom().getPath(entity);
+            String entityPath = getSession().getPath(entity);
             String parentPath = entityPath != null ? entityPath : "/";
 
             // Search the parent object annotated with JcrParentNode
-            Object parentObject = getJcrom().getParentObject(entity);
+            Object parentObject = getSession().getParentObject(entity);
             if (parentObject != null) {
                 // Retrieve the parent path and check if the parent node exists
-                parentPath = getJcrom().getPath(parentObject);
+                parentPath = getSession().getPath(parentObject);
                 if (!exists(parentPath)) {
                     throw new JcrMappingException("the parent with path '" + parentPath + "' is not created!");
                 }
                 Node parentNode = getNode(parentPath);
                 // Search a child container path annotated with JcrChildNode and the type is the same as 'entity' clazz
-                String childContainerPath = getJcrom().getChildContainerPath(entity, parentObject, parentNode);
+                String childContainerPath = getSession().getChildContainerPath(entity, parentObject, parentNode);
                 if (childContainerPath != null) {
                     parentPath = childContainerPath;
                 }
@@ -218,7 +221,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     @Override
     public T create(String parentNodePath, T entity, JcromCallback action) {
         try {
-            String entityName = getJcrom().getName(entity);
+            String entityName = getSession().getName(entity);
             if (entityName == null || entityName.equals("")) {
                 throw new JcrMappingException("The name of the entity being created is empty!");
             }
@@ -233,7 +236,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
                     JcrUtils.checkout(parentNode);
                 }
             }
-            Node newNode = getJcrom().addNode(parentNode, entity, getMixinTypes(), action);
+            Node newNode = getSession().addNode(parentNode, entity, getMixinTypes(), action);
             newNode.getSession().save();
             if (isVersionable) {
                 //newNode.checkin();
@@ -261,12 +264,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public T update(T entity, String childNameFilter, int maxDepth) {
-        return update(entity, new NodeFilter(childNameFilter, maxDepth), null);
-    }
-
-    @Override
     public T update(T entity, NodeFilter nodeFilter) {
         return update(entity, nodeFilter, null);
     }
@@ -275,7 +272,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     public T update(T entity, NodeFilter nodeFilter, JcromCallback action) {
         Node node;
         try {
-            node = getNode(getJcrom().getPath(entity));
+            node = getNode(getSession().getPath(entity));
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not update node", e);
         }
@@ -290,12 +287,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     @Override
     public T updateById(T entity, String id, JcromCallback action) {
         return updateById(entity, id, new NodeFilter(NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE), action);
-    }
-
-    @Override
-    @Deprecated
-    public T updateById(T entity, String id, String childNameFilter, int maxDepth) {
-        return updateById(entity, id, new NodeFilter(childNameFilter, maxDepth), null);
     }
 
     @Override
@@ -320,7 +311,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
                 //node.checkout();
                 JcrUtils.checkoutRecursively(node);
             }
-            Node updatedNode = getJcrom().updateNode(node, entity, nodeFilter, action);
+            Node updatedNode = getSession().updateNode(node, entity, nodeFilter, action);
             updatedNode.getSession().save();
             if (isVersionable) {
                 //node.checkin();
@@ -336,9 +327,10 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     public void move(T entity, String newParentPath) {
         // if this is a versionable node, then we need to check out both
         // the old parent and the new parent before moving the node
+    	JcrSession session = getSession();
         try {
-            String sourcePath = getJcrom().getPath(entity);
-            String entityName = getJcrom().getName(entity);
+            String sourcePath = session.getPath(entity);
+            String entityName = session.getName(entity);
             Node oldParent = null;
             Node newParent = null;
             if (isVersionable) {
@@ -355,7 +347,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
                 }
             }
 
-            Session session = getSession();
             if (newParentPath.equals("/")) {
                 // special case, moving to root
                 session.move(sourcePath, newParentPath + entityName);
@@ -452,12 +443,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public T get(String path, String childNameFilter, int maxDepth) {
-        return get(path, new NodeFilter(childNameFilter, maxDepth));
-    }
-
-    @Override
     public T get(String path, NodeFilter nodeFilter) {
         if (exists(path)) {
             Node node;
@@ -466,7 +451,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
             } catch (RepositoryException e) {
                 throw new JcrMappingException("Could not get node", e);
             }
-            return getJcrom().fromNode(getEntityClass(), node, nodeFilter);
+            return getSession().fromNode(getEntityClass(), node, nodeFilter);
         } else {
             return null;
         }
@@ -483,24 +468,12 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public List<T> getAll(String path, String childNameFilter, int maxDepth) {
-        return getAll(path, new NodeFilter(childNameFilter, maxDepth));
-    }
-
-    @Override
     public List<T> getAll(String path, NodeFilter nodeFilter) {
         try {
             return toList(getNodes(path), nodeFilter);
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not get nodes", e);
         }
-    }
-
-    @Override
-    @Deprecated
-    public List<T> getAll(String path, String childNameFilter, int maxDepth, long startIndex, long resultSize) {
-        return getAll(path, new NodeFilter(childNameFilter, maxDepth), startIndex, resultSize);
     }
 
     @Override
@@ -520,12 +493,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public T loadById(String id, String childNameFilter, int maxDepth) {
-        return loadById(id, new NodeFilter(childNameFilter, maxDepth));
-    }
-
-    @Override
     public T loadById(String id, NodeFilter nodeFilter) {
         Node node;
         try {
@@ -533,18 +500,12 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not load node", e);
         }
-        return getJcrom().fromNode(getEntityClass(), node, nodeFilter);
+        return getSession().fromNode(getEntityClass(), node, nodeFilter);
     }
 
     @Override
     public T getVersion(String path, String versionName) {
         return getVersion(path, versionName, new NodeFilter(NodeFilter.INCLUDE_ALL, NodeFilter.DEPTH_INFINITE));
-    }
-
-    @Override
-    @Deprecated
-    public T getVersion(String path, String versionName, String childNameFilter, int maxDepth) {
-        return getVersion(path, versionName, new NodeFilter(childNameFilter, maxDepth));
     }
 
     @Override
@@ -562,12 +523,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public T getVersionById(String id, String versionName, String childNameFilter, int maxDepth) {
-        return getVersionById(id, versionName, new NodeFilter(childNameFilter, maxDepth));
-    }
-
-    @Override
     public T getVersionById(String id, String versionName, NodeFilter nodeFilter) {
         try {
             Node node = getNodeById(id);
@@ -581,7 +536,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         try {
             VersionHistory versionHistory = JcrUtils.getVersionManager(node.getSession()).getVersionHistory(node.getPath());
             Version version = versionHistory.getVersion(versionName);
-            return getJcrom().fromNode(getEntityClass(), version.getNodes().nextNode(), nodeFilter);
+            return getSession().fromNode(getEntityClass(), version.getNodes().nextNode(), nodeFilter);
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not get version", e);
         }
@@ -692,24 +647,12 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public List<T> getVersionList(String path, String childNameFilter, int maxDepth) {
-        return getVersionList(path, new NodeFilter(childNameFilter, maxDepth));
-    }
-
-    @Override
     public List<T> getVersionList(String path, NodeFilter nodeFilter) {
         try {
             return getVersionList(getNode(path), nodeFilter);
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not get version list", e);
         }
-    }
-
-    @Override
-    @Deprecated
-    public List<T> getVersionList(String path, String childNameFilter, int maxDepth, long startIndex, long resultSize) {
-        return getVersionList(path, new NodeFilter(childNameFilter, maxDepth), startIndex, resultSize);
     }
 
     @Override
@@ -732,12 +675,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public List<T> getVersionListById(String id, String childNameFilter, int maxDepth) {
-        return getVersionListById(id, new NodeFilter(childNameFilter, maxDepth));
-    }
-
-    @Override
     public List<T> getVersionListById(String id, NodeFilter nodeFilter) {
         try {
             Node node = getNodeById(id);
@@ -745,12 +682,6 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not get version list", e);
         }
-    }
-
-    @Override
-    @Deprecated
-    public List<T> getVersionListById(String id, String childNameFilter, int maxDepth, long startIndex, long resultSize) {
-        return getVersionListById(id, new NodeFilter(childNameFilter, maxDepth), startIndex, resultSize);
     }
 
     @Override
@@ -773,9 +704,9 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
                 Version version = versionIterator.nextVersion();
                 NodeIterator nodeIterator = version.getNodes();
                 while (nodeIterator.hasNext()) {
-                    T entityVersion = getJcrom().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter);
+                    T entityVersion = getSession().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter);
                     Version baseVersion = JcrUtils.getVersionManager(node.getSession()).getBaseVersion(node.getPath());
-                    getJcrom().setBaseVersionInfo(entityVersion, baseVersion.getName(), baseVersion.getCreated());
+                    getSession().setBaseVersionInfo(entityVersion, baseVersion.getName(), baseVersion.getCreated());
                     versionList.add(entityVersion);
                 }
             }
@@ -800,7 +731,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
                 Version version = versionIterator.nextVersion();
                 NodeIterator nodeIterator = version.getNodes();
                 while (nodeIterator.hasNext()) {
-                    versionList.add(getJcrom().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter));
+                    versionList.add(getSession().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter));
                 }
                 counter++;
             }
@@ -831,24 +762,12 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     }
 
     @Override
-    @Deprecated
-    public List<T> findAll(String rootPath, String childNameFilter, int maxDepth) {
-        return findAll(rootPath, new NodeFilter(childNameFilter, maxDepth));
-    }
-
-    @Override
     public List<T> findAll(String rootPath, NodeFilter nodeFilter) {
         try {
             return toList(getNode(rootPath).getNodes(), nodeFilter);
         } catch (RepositoryException e) {
             throw new JcrMappingException("Could not find nodes", e);
         }
-    }
-
-    @Override
-    @Deprecated
-    public List<T> findAll(String rootPath, String childNameFilter, int maxDepth, long startIndex, long resultSize) {
-        return findAll(rootPath, new NodeFilter(childNameFilter, maxDepth), startIndex, resultSize);
     }
 
     @Override
@@ -873,7 +792,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      */
     protected List<T> findByXPath(String xpath, NodeFilter nodeFilter, long startIndex, long resultSize) {
         try {
-            QueryManager queryManager = getSession().getWorkspace().getQueryManager();
+            QueryManager queryManager = getSession().getQueryManager();
             Query query = queryManager.createQuery(xpath, Query.XPATH);
             QueryResult result = query.execute();
             NodeIterator nodeIterator = result.getNodes();
@@ -893,7 +812,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      */
     protected List<T> findByXPath(String xpath, NodeFilter nodeFilter) {
         try {
-            QueryManager queryManager = getSession().getWorkspace().getQueryManager();
+            QueryManager queryManager = getSession().getQueryManager();
             Query query = queryManager.createQuery(xpath, Query.XPATH);
             QueryResult result = query.execute();
             return toList(result.getNodes(), nodeFilter);
@@ -913,7 +832,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      */
     protected List<T> findBySql(String sql, NodeFilter nodeFilter, long startIndex, long resultSize) {
         try {
-            QueryManager queryManager = getSession().getWorkspace().getQueryManager();
+            QueryManager queryManager = getSession().getQueryManager();
             Query query = queryManager.createQuery(sql, Query.JCR_SQL2);
             QueryResult result = query.execute();
             NodeIterator nodeIterator = result.getNodes();
@@ -933,7 +852,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      */
     protected List<T> findBySql(String sql, NodeFilter nodeFilter) {
         try {
-            QueryManager queryManager = getSession().getWorkspace().getQueryManager();
+            QueryManager queryManager = getSession().getQueryManager();
             Query query = queryManager.createQuery(sql, Query.JCR_SQL2);
             QueryResult result = query.execute();
             return toList(result.getNodes(), nodeFilter);
@@ -954,7 +873,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
      */
     protected List<T> findByQOM(Source source, Constraint constraint, Ordering orderings[], Column columns[], NodeFilter nodeFilter) {
         try {
-            QueryObjectModelFactory factory = getSession().getWorkspace().getQueryManager().getQOMFactory();
+            QueryObjectModelFactory factory = getSession().getQueryManager().getQOMFactory();
             Query query = factory.createQuery(source, constraint, orderings, columns);
             QueryResult result = query.execute();
             return toList(result.getNodes(), nodeFilter);
@@ -973,7 +892,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
     protected List<T> toList(NodeIterator nodeIterator, NodeFilter nodeFilter) {
         List<T> objects = new ArrayList<T>();
         while (nodeIterator.hasNext()) {
-            objects.add(getJcrom().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter));
+            objects.add(getSession().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter));
         }
         return objects;
     }
@@ -993,7 +912,7 @@ public abstract class AbstractJcrDAO<T> implements JcrDAO<T> {
             if (counter == resultSize) {
                 break;
             }
-            objects.add(getJcrom().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter));
+            objects.add(getSession().fromNode(getEntityClass(), nodeIterator.nextNode(), nodeFilter));
             counter++;
         }
         return objects;

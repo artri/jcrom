@@ -19,11 +19,17 @@ package org.jcrom;
 
 import java.io.Closeable;
 import java.io.Serializable;
+import java.util.Calendar;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.jcr.query.QueryManager;
+
+import org.jcrom.annotations.JcrNode;
+import org.jcrom.callback.JcromCallback;
+import org.jcrom.util.NodeFilter;
 
 public interface JcrSession extends Serializable, AutoCloseable, Closeable {
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -214,6 +220,15 @@ public interface JcrSession extends Serializable, AutoCloseable, Closeable {
 	void setReadOnly(Object entityOrProxy, boolean readOnly);
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	String getName(Object object) throws JcrMappingException;
+	String getPath(Object object) throws JcrMappingException;
+	Object getParentObject(Object childObject) throws JcrMappingException;
+	String getChildContainerPath(Object childObject, Object parentObject, Node parentNode);
+	void setBaseVersionInfo(Object object, String name, Calendar created) throws JcrMappingException;
+	
+	QueryManager getQueryManager() throws RepositoryException;
+	void move(String srcAbsPath, String destAbsPath) throws RepositoryException;
+	void save() throws RepositoryException;
 	
 	Node getRootNode() throws RepositoryException;
 	Node getNode(String absolutePath) throws RepositoryException;
@@ -222,6 +237,106 @@ public interface JcrSession extends Serializable, AutoCloseable, Closeable {
 	
 	boolean hasNode(String referencePath) throws RepositoryException;
 	
+    /**
+     * Maps the node supplied to an instance of the entity class. Loads all child nodes, to infinite depth.
+     * 
+     * @param entityClass the class of the entity to be instantiated from the node (in the case of dynamic instantiation, the instance class may be read from the document, but will be cast to this class)
+     * @param node the JCR node from which to create the object
+     * @return an instance of the JCR entity class, mapped from the node
+     * @throws JcrMappingException
+     */
+    <T> T fromNode(Class<T> entityClass, Node node) throws JcrMappingException;
+    
+    /**
+     * Maps the node supplied to an instance of the entity class.
+     * 
+     * @param entityClass the class of the entity to be instantiated from the node (in the case of dynamic instantiation, the instance class may be read from the document, but will be cast to this class)
+     * @param node the JCR node from which to create the object
+     * @param nodeFilter the NodeFilter to apply when loading child nodes and references
+     * @return an instance of the JCR entity class, mapped from the node
+     * @throws JcrMappingException
+     */
+    <T> T fromNode(Class<T> entityClass, Node node, NodeFilter nodeFilter) throws JcrMappingException;
+    
+    /**
+     * Maps the entity supplied to a JCR node, and adds that node as a child to the parent node supplied.
+     * 
+     * @param parentNode the parent node to which the entity node will be added
+     * @param entity the entity to be mapped to the JCR node
+     * @return the newly created JCR node
+     * @throws JcrMappingException
+     */
+    Node addNode(Node parentNode, Object entity) throws JcrMappingException;
+    
+    /**
+     * Maps the entity supplied to a JCR node, and adds that node as a child to the parent node supplied.
+     * 
+     * @param parentNode the parent node to which the entity node will be added
+     * @param entity the entity to be mapped to the JCR node
+     * @param mixinTypes an array of mixin type that will be added to the new node
+     * @return the newly created JCR node
+     * @throws JcrMappingException
+     */
+    Node addNode(Node parentNode, Object entity, String[] mixinTypes) throws JcrMappingException;    
+    
+    /**
+     * Maps the entity supplied to a JCR node, and adds that node as a child to the parent node supplied.
+     * 
+     * @param parentNode the parent node to which the entity node will be added
+     * @param entity the entity to be mapped to the JCR node
+     * @param mixinTypes an array of mixin type that will be added to the new node
+     * @param action callback object that specifies the Jcrom actions: 
+     *     <ul>
+     *       <li>{@link JcromCallback#doAddNode(Node, String, JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doAddMixinTypes(Node, String[], JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doAddClassNameToProperty(Node, JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doComplete(Object, Node)},</li>
+     *     </ul>
+     * @return the newly created JCR node
+     * @throws JcrMappingException
+     * @since 2.1.0
+     */
+    Node addNode(Node parentNode, Object entity, String[] mixinTypes, JcromCallback action) throws JcrMappingException;     
+    
+    /**
+     * Update an existing JCR node with the entity supplied.
+     * 
+     * @param node the JCR node to be updated
+     * @param entity the entity that will be mapped to the existing node
+     * @return the updated node
+     * @throws JcrMappingException
+     */
+    public Node updateNode(Node node, Object entity) throws JcrMappingException;
+    
+    /**
+     * Update an existing JCR node with the entity supplied.
+     * 
+     * @param node the JCR node to be updated
+     * @param entity the entity that will be mapped to the existing node
+     * @param nodeFilter the NodeFilter to apply when updating child nodes and references
+     * @return the updated node
+     * @throws JcrMappingException
+     */
+    public Node updateNode(Node node, Object entity, NodeFilter nodeFilter) throws JcrMappingException;    
+    
+    /**
+     * Update an existing JCR node with the entity supplied.
+     * 
+     * @param node the JCR node to be updated
+     * @param entity the entity that will be mapped to the existing node
+     * @param nodeFilter the NodeFilter to apply when updating child nodes and references
+     * @param action callback object that specifies the Jcrom actions: 
+     *     <ul>
+     *       <li>{@link JcromCallback#doUpdateClassNameToProperty(Node, JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doMoveNode(Node, Node, String, JcrNode, Object)},</li>
+     *       <li>{@link JcromCallback#doComplete(Object, Node)},</li>
+     *     </ul>
+     * @return the updated node
+     * @throws JcrMappingException
+     * @since 2.1.0
+     */
+    public Node updateNode(Node node, Object entity, NodeFilter nodeFilter, JcromCallback action) throws JcrMappingException;
+    
 	Value createValue(String path) throws RepositoryException;
 	Value createValue(Node node) throws RepositoryException;
 	Value createValue(Node node, boolean weak) throws RepositoryException;

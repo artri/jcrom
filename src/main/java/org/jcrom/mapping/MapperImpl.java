@@ -95,7 +95,7 @@ public class MapperImpl implements MapperImplementor {
      * Create a Mapper for a specific class.
      * 
      * @param sessionFactory
-     */    
+     */
     public MapperImpl(JcrSessionImplementor session) {
     	this.session = session;
         this.propertyMapper = new PropertyMapper(session);
@@ -108,10 +108,12 @@ public class MapperImpl implements MapperImplementor {
 		return session;
 	}
    
+    @Override
 	public void clearHistory() {
         history.remove();
     }
 
+    @Override
     public boolean isMapped(Class<?> c) {
         return mappedClasses.contains(c);
     }
@@ -175,12 +177,14 @@ public class MapperImpl implements MapperImplementor {
         return findAnnotatedField(obj, JcrIdentifier.class);
     }
     
-    Object getParentObject(Object childObject) throws IllegalAccessException {
+    @Override
+    public Object getParentObject(Object childObject) throws IllegalAccessException {
         Field parentField = findParentField(childObject);
         return parentField != null ? getTypeHandler().getObject(parentField, childObject) : null;
     }
 
-    String getChildContainerNodePath(Object childObject, Object parentObject, Node parentNode) throws IllegalAccessException, RepositoryException {
+    @Override
+    public String getChildContainerNodePath(Object childObject, Object parentObject, Node parentNode) throws IllegalAccessException, RepositoryException {
         return childNodeMapper.getChildContainerNodePath(childObject, parentObject, parentNode);
     }
 
@@ -193,7 +197,7 @@ public class MapperImpl implements MapperImplementor {
         return false;
     }
 
-    void setBaseVersionInfo(Object object, String name, Calendar created) throws IllegalAccessException {
+    public void setBaseVersionInfo(Object object, String name, Calendar created) throws IllegalAccessException {
         Field baseName = findAnnotatedField(object, JcrBaseVersionName.class);
         if (baseName != null) {
             baseName.set(object, name);
@@ -241,6 +245,7 @@ public class MapperImpl implements MapperImplementor {
      * @return an instance of the JCR entity class, mapped from the node
      * @throws java.lang.Exception
      */
+    @Override
     public Object fromNodeWithParent(Class<?> entityClass, Node node, NodeFilter nodeFilter) throws ClassNotFoundException, InstantiationException, RepositoryException, IllegalAccessException, IOException {
         history.set(new HashMap<HistoryKey, Object>());
         Object obj = createInstanceForNode(entityClass, node);

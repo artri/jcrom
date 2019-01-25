@@ -19,6 +19,7 @@ package org.jcrom.internal;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.UUID;
 
 import javax.jcr.Node;
@@ -27,6 +28,7 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.jcr.query.QueryManager;
 
 import org.jcrom.AnnotationReader;
 import org.jcrom.FlushMode;
@@ -41,6 +43,7 @@ import org.jcrom.callback.JcromCallback;
 import org.jcrom.engine.spi.JcrSessionFactoryImplementor;
 import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.jcrom.mapping.Mapper;
+import org.jcrom.mapping.MapperImplementor;
 import org.jcrom.type.TypeHandler;
 import org.jcrom.util.NodeFilter;
 import org.jcrom.util.PathUtils;
@@ -74,7 +77,7 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	private transient boolean discardOnClose;
 	
 	
-	private javax.jcr.Session jcrSession;
+	private javax.jcr.Session rawSession;
 	
 	public JcrSessionImpl(JcrSessionFactoryImpl sessionFactory, SessionCreationOptions options) {
 		this.sessionFactory = sessionFactory;
@@ -433,7 +436,7 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	public TypeHandler getTypeHandler() {
 		return getSessionFactory().getTypeHandler();
 	}
-		
+
 	/** (non-Javadoc)
 	 * @see org.jcrom.engine.spi.JcrSessionImplementor#getAnnotationReader()
 	 */
@@ -442,52 +445,120 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 		return getSessionFactory().getAnnotationReader();
 	}
 
-	public Mapper getMapper() {
+	public MapperImplementor getMapper() {
         return getSessionFactory().getMapper();
     }
 	
+    public String getName(Object object) throws JcrMappingException {
+        try {
+            return getMapper().getNodeName(object);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not get node name from object", e);
+        }
+    }
+	
+    public String getPath(Object object) throws JcrMappingException {
+        try {
+            return getMapper().getNodePath(object);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not get node path from object", e);
+        }
+    }
+
+    public Object getParentObject(Object childObject) throws JcrMappingException {
+        try {
+            return getMapper().getParentObject(childObject);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not get parent object with Annotation JcrParentNode from child object", e);
+        }
+    }
+
+    public String getChildContainerPath(Object childObject, Object parentObject, Node parentNode) {
+        try {
+            return getMapper().getChildContainerNodePath(childObject, parentObject, parentNode);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not get child object with Annotation @JcrChildNode and with the type '" + childObject.getClass() + "' from parent object", e);
+        } catch (RepositoryException e) {
+            throw new JcrMappingException("Could not get child object with Annotation @JcrChildNode and with the type '" + childObject.getClass() + "' from parent object", e);
+        }
+    }
+    
+    public void setBaseVersionInfo(Object object, String name, Calendar created) throws JcrMappingException {
+        try {
+            getMapper().setBaseVersionInfo(object, name, created);
+        } catch (IllegalAccessException e) {
+            throw new JcrMappingException("Could not set base version info on object", e);
+        }
+    }
+		
+	/** (non-Javadoc)
+	 * @see org.jcrom.JcrSession#getQueryManager()
+	 */
+	@Override
+	public QueryManager getQueryManager() throws RepositoryException {
+		return rawSession.getWorkspace().getQueryManager();
+	}
+	
+	/**
+	 *  (non-Javadoc)
+	 * @see org.jcrom.JcrSession#move(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void move(String srcAbsPath, String destAbsPath) throws RepositoryException {
+		rawSession.move(srcAbsPath, destAbsPath);
+	}
+
+	/**
+	 *  (non-Javadoc)
+	 * @see org.jcrom.JcrSession#save()
+	 */
+	@Override
+	public void save() throws RepositoryException {
+		rawSession.save();
+	}
+
 	@Override
 	public Node getRootNode() throws RepositoryException {
-		return jcrSession.getRootNode();
+		return rawSession.getRootNode();
 	}
 	
 	@Override
 	public Node getNode(String absolutePath) throws RepositoryException {
         // special case, add directly to the root node
-        return PathUtils.isRootPath(absolutePath) ? jcrSession.getRootNode() 
-        		: jcrSession.getRootNode().getNode(PathUtils.relativePath(absolutePath));
+        return PathUtils.isRootPath(absolutePath) ? rawSession.getRootNode() 
+        		: rawSession.getRootNode().getNode(PathUtils.relativePath(absolutePath));
 	}
 	
 	@Override
 	public Node getNodeById(String id) throws RepositoryException {
-		return jcrSession.getNodeByIdentifier(id);
+		return rawSession.getNodeByIdentifier(id);
 	}	
 	
 	@Override
 	public NodeIterator getNodes(String absolutePath) throws RepositoryException {
         // special case, add directly to the root node
-        return PathUtils.isRootPath(absolutePath) ? jcrSession.getRootNode().getNodes() 
-        		: jcrSession.getRootNode().getNodes(PathUtils.relativePath(absolutePath));
+        return PathUtils.isRootPath(absolutePath) ? rawSession.getRootNode().getNodes() 
+        		: rawSession.getRootNode().getNodes(PathUtils.relativePath(absolutePath));
     }
 	
 	@Override
 	public boolean hasNode(String referencePath) throws RepositoryException {
-		return jcrSession.getRootNode().hasNode(PathUtils.relativePath(referencePath));
+		return rawSession.getRootNode().hasNode(PathUtils.relativePath(referencePath));
 	}
 	
 	@Override
 	public Value createValue(String path) throws RepositoryException {
-		return jcrSession.getValueFactory().createValue(path);
+		return rawSession.getValueFactory().createValue(path);
 	}
 	
 	@Override
 	public Value createValue(Node node) throws RepositoryException {
-		return jcrSession.getValueFactory().createValue(node);
+		return rawSession.getValueFactory().createValue(node);
 	}
 	
 	@Override
 	public Value createValue(Node node, boolean weak) throws RepositoryException {
-		return jcrSession.getValueFactory().createValue(node, weak);
+		return rawSession.getValueFactory().createValue(node, weak);
 	}
 	    
     /**
@@ -513,7 +584,7 @@ public class JcrSessionImpl implements JcrSessionImplementor {
      */
     @SuppressWarnings("unchecked")
     public <T> T fromNode(Class<T> entityClass, Node node, NodeFilter nodeFilter) throws JcrMappingException {
-        if (!getMapper().isDynamicInstantiation() && !getMapper().isMapped(entityClass)) {
+        if (!isDynamicInstantiation() && !getMapper().isMapped(entityClass)) {
             throw new JcrMappingException("Trying to map to an unmapped class: " + entityClass.getName());
         }
         try {

@@ -2,7 +2,7 @@ package org.jcrom.engine.spi;
 
 import org.jcrom.AnnotationReader;
 import org.jcrom.JcrSessionFactory;
-import org.jcrom.mapping.Mapper;
+import org.jcrom.mapping.MapperImplementor;
 
 public interface JcrSessionFactoryImplementor extends JcrSessionFactory {
 
@@ -30,5 +30,5 @@ public interface JcrSessionFactoryImplementor extends JcrSessionFactory {
 	 */	
 	AnnotationReader getAnnotationReader();
 	
-	Mapper getMapper();	
+	MapperImplementor getMapper();	
 }

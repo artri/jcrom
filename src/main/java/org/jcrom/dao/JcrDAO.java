@@ -115,19 +115,6 @@ public interface JcrDAO<T> {
     T update(T entity, JcromCallback action);
 
     /**
-     * @deprecated This method is now deprecated. Use {@link #update(Object, NodeFilter)} instead.
-     * 
-     * <p>Updates an existing JCR Node with the values extracted from the object supplied.</p> 
-     * 
-     * @param entity the object to be mapped to a JCR node
-     * @param childNameFilter comma separated list of names of child nodes to load ("*" loads all, "none" loads no children, and "-" at the beginning makes it an exclusion filter)
-     * @param maxDepth the maximum depth of loaded child nodes (0 means no child nodes are loaded, while a negative value means that no restrictions are set on the depth).
-     * @return the updated Object
-     */
-    @Deprecated
-    T update(T entity, String childNameFilter, int maxDepth);
-
-    /**
      * Update an existing JCR node with the entity supplied.
      * 
      * @param entity the entity that will be mapped to the existing node
@@ -172,23 +159,6 @@ public interface JcrDAO<T> {
      * @since 2.1.0
      */
     T updateById(T entity, String id, JcromCallback action);
-
-    /**
-     * @deprecated This method is now deprecated. Use {@link #updateById(Object, String, NodeFilter)} instead.
-     * 
-     * <p>
-     * Updates an existing JCR Node with the values extracted from the object supplied.
-     * The node to update is loaded using the Identifier supplied.
-     * </p>
-     * 
-     * @param entity the object to be mapped to a JCR node
-     * @param id the Identifier of the node to update
-     * @param childNameFilter comma separated list of names of child nodes to load ("*" loads all, "none" loads no children, and "-" at the beginning makes it an exclusion filter)
-     * @param maxDepth the maximum depth of loaded child nodes (0 means no child nodes are loaded, while a negative value means that no restrictions are set on the depth).
-     * @return the updated Object
-     */
-    @Deprecated
-    T updateById(T entity, String id, String childNameFilter, int maxDepth);
 
     /**
      * Updates an existing JCR Node with the values extracted from the object supplied.
@@ -260,19 +230,6 @@ public interface JcrDAO<T> {
     T get(String path);
 
     /**
-     * @deprecated This method is now deprecated. Use {@link #get(String, NodeFilter)} instead.
-     * 
-     * <p>Get an entity from JCR by path (from a @JcrPath field).</p>
-     * 
-     * @param path the full path of the entity to be loaded
-     * @param childNameFilter comma separated list of names of child nodes to load ("*" loads all, "none" loads no children, and "-" at the beginning makes it an exclusion filter)
-     * @param maxDepth the maximum depth of loaded child nodes (0 means no child nodes are loaded, while a negative value means that no restrictions are set on the depth).
-     * @return an object instance mapped from the JCR node with the path supplied, or null if no such node was found
-     */
-    @Deprecated
-    T get(String path, String childNameFilter, int maxDepth);
-
-    /**
      * Get an entity from JCR by path (from a @JcrPath field).
      * 
      * @param path path the full path of the entity to be loaded
@@ -301,19 +258,6 @@ public interface JcrDAO<T> {
     List<T> getAll(String path, long startIndex, long resultSize);
 
     /**
-     * @deprecated This method is now deprecated. Use {@link #getAll(String, NodeFilter)} instead.
-     * 
-     * <p>Get all entities from JCR by path (from a @JcrPath field).</p>
-     * 
-     * @param path the full path of the entities to be loaded
-     * @param childNameFilter comma separated list of names of child nodes to load ("*" loads all, "none" loads no children, and "-" at the beginning makes it an exclusion filter)
-     * @param maxDepth the maximum depth of loaded child nodes (0 means no child nodes are loaded, while a negative value means that no restrictions are set on the depth).
-     * @return a list of object instances mapped from the JCR node with the path supplied, or null if no such node was found
-     */
-    @Deprecated
-    List<T> getAll(String path, String childNameFilter, int maxDepth);
-
-    /**
      * Get all entities from JCR by path (from a @JcrPath field).
      * 
      * @param path the full path of the entities to be loaded
@@ -322,24 +266,6 @@ public interface JcrDAO<T> {
      * @since 2.1.0
      */
     List<T> getAll(String path, NodeFilter nodeFilter);
-
-    /**
-     * @deprecated This method is now deprecated. Use {@link #getAll(String, NodeFilter, long, long)} instead.
-     * 
-     * <p>
-     * Get all entities from JCR by path (from a @JcrPath field).
-     * Takes parameters that control the size and offset of the result, and filter which child nodes to load.
-     * </p>
-     * 
-     * @param path the full path of the entities to be loaded
-     * @param childNameFilter comma separated list of names of child nodes to load ("*" loads all, "none" loads no children, and "-" at the beginning makes it an exclusion filter)
-     * @param maxDepth the maximum depth of loaded child nodes (0 means no child nodes are loaded, while a negative value means that no restrictions are set on the depth).
-     * @param startIndex the zero based index of the first item to return
-     * @param resultSize the number of items to return
-     * @return a list of object instances mapped from the JCR nodes with the path supplied, or null if no such node was found
-     */
-    @Deprecated
-    List<T> getAll(String path, String childNameFilter, int maxDepth, long startIndex, long resultSize);
 
     /**
      * Get all entities from JCR by path (from a @JcrPath field).
@@ -363,17 +289,6 @@ public interface JcrDAO<T> {
     T loadById(String id);
 
     /**
-     * @deprecated This method is now deprecated. Use {@link #loadById(String, NodeFilter)} instead.
-     * 
-     * <p>Load an entity from JCR by UUID lookup.</p>
-     * 
-     * @param id the Identifier generated by JCR
-     * @return an object instance mapped from the JCR node with the id
-     */
-    @Deprecated
-    T loadById(String id, String childNameFilter, int maxDepth);
-
-    /**
      * Load an entity from JCR by UUID lookup.
      * 
      * @param id the Identifier generated by JCR
@@ -392,12 +307,6 @@ public interface JcrDAO<T> {
     List<T> getVersionList(String path);
 
     /**
-     * @deprecated This method is now deprecated. Use {@link #getVersionList(String, NodeFilter)} instead.
-     */
-    @Deprecated
-    List<T> getVersionList(String path, String childNameFilter, int maxDepth);
-
-    /**
      * Get all versions by path.
      * 
      * @param path the full path of the entity to be loaded
@@ -406,12 +315,6 @@ public interface JcrDAO<T> {
      * @since 2.1.0
      */
     List<T> getVersionList(String path, NodeFilter nodeFilter);
-
-    /**
-     * @deprecated This method is now deprecated. Use {@link #getVersionList(String, NodeFilter, long, long)} instead.
-     */
-    @Deprecated
-    List<T> getVersionList(String path, String childNameFilter, int maxDepth, long startIndex, long resultSize);
 
     /**
      * Get all versions by path.
@@ -435,12 +338,6 @@ public interface JcrDAO<T> {
     List<T> getVersionListById(String id);
 
     /**
-     * @deprecated This method is now deprecated. Use {@link #getVersionListById(String, NodeFilter)} instead.
-     */
-    @Deprecated
-    List<T> getVersionListById(String id, String childNameFilter, int maxDepth);
-
-    /**
      * Get all versions by Identifier lookup.
      * 
      * @param id the Identifier generated by JCR
@@ -449,12 +346,6 @@ public interface JcrDAO<T> {
      * @since 2.1.0
      */
     List<T> getVersionListById(String id, NodeFilter nodeFilter);
-
-    /**
-     * @deprecated This method is now deprecated. Use {@link #getVersionListById(String, NodeFilter, long, long)} instead.
-     */
-    @Deprecated
-    List<T> getVersionListById(String id, String childNameFilter, int maxDepth, long startIndex, long resultSize);
 
     /**
      * Get all versions by Identifier lookup.
@@ -496,12 +387,6 @@ public interface JcrDAO<T> {
     T getVersion(String path, String versionName);
 
     /**
-     * @deprecated This method is now deprecated. Use {@link #getVersion(String, String, NodeFilter)} instead.
-     */
-    @Deprecated
-    T getVersion(String path, String versionName, String childNameFilter, int maxDepth);
-
-    /**
      * Get one specific version by path and version name.
      * Takes parameters that control the size and offset of the result, and filter which child nodes to load.
      * 
@@ -522,12 +407,6 @@ public interface JcrDAO<T> {
      * @return an object instance mapped from the JCR node with the path supplied, or null if no such node was found
      */
     T getVersionById(String id, String versionName);
-
-    /**
-     * @deprecated This method is now deprecated. Use {@link #getVersionById(String, String, NodeFilter)} instead.
-     */
-    @Deprecated
-    T getVersionById(String id, String versionName, String childNameFilter, int maxDepth);
 
     /**
      * Get one specific version by Identifier and version name.
@@ -619,19 +498,6 @@ public interface JcrDAO<T> {
     List<T> findAll(String rootPath, long startIndex, long resultSize);
 
     /**
-     * @deprecated This method is now deprecated. Use {@link #findAll(String, NodeFilter)} instead.
-     * 
-     * <p>Find all entities represented by this DAO.</p>
-     * 
-     * @param rootPath root path of the found entities
-     * @param childNameFilter comma separated list of names of child nodes to load ("*" loads all, "none" loads no children, and "-" at the beginning makes it an exclusion filter)
-     * @param maxDepth the maximum depth of loaded child nodes (0 means no child nodes are loaded, while a negative value means that no restrictions are set on the depth).
-     * @return all entities represented by this DAO
-     */
-    @Deprecated
-    List<T> findAll(String rootPath, String childNameFilter, int maxDepth);
-
-    /**
      * Find all entities represented by this DAO.
      * 
      * @param rootPath root path of the found entities
@@ -640,24 +506,6 @@ public interface JcrDAO<T> {
      * @since 2.1.0
      */
     List<T> findAll(String rootPath, NodeFilter nodeFilter);
-
-    /**
-     * @deprecated This method is now deprecated. Use {@link #findAll(String, NodeFilter, long, long)} instead.
-     * 
-     * <p>
-     * Find all entities represented by this DAO.
-     * Takes parameters that control the size and offset of the result, and filter which child nodes to load.
-     * </p>
-     * 
-     * @param rootPath root path of the found entities
-     * @param childNameFilter comma separated list of names of child nodes to load ("*" loads all, "none" loads no children, and "-" at the beginning makes it an exclusion filter)
-     * @param maxDepth the maximum depth of loaded child nodes (0 means no child nodes are loaded, while a negative value means that no restrictions are set on the depth).
-     * @param startIndex the zero based index of the first item to return
-     * @param resultSize the number of items to return
-     * @return all entities represented by this DAO
-     */
-    @Deprecated
-    List<T> findAll(String rootPath, String childNameFilter, int maxDepth, long startIndex, long resultSize);
 
     /**
      * Find all entities represented by this DAO.
