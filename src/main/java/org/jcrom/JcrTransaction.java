@@ -20,7 +20,7 @@ package org.jcrom;
 import javax.transaction.Synchronization;
 
 
-public interface Transaction {
+public interface JcrTransaction {
 
 	/**
 	 * Start a resource transaction.
@@ -55,6 +55,16 @@ public interface Transaction {
 	boolean isActive();
 	
 	/**
+	 * Indicate whether a resource transaction is in progress.
+	 *
+	 * @param isMarkedRollbackConsideredActive whether to consider {@link JcrTransactionStatus#MARKED_ROLLBACK} as active.
+	 *
+	 * @return boolean indicating whether transaction is in progress
+	 * @throws JcrRuntimeException if an unexpected error condition is encountered.
+	 */
+	boolean isActive(boolean isMarkedRollbackConsideredActive) throws JcrRuntimeException;
+
+	/**
 	 * Determine whether the current resource transaction has been marked for rollback.
 	 * 
 	 * @return boolean indicating whether the transaction has been marked for rollback
@@ -79,7 +89,7 @@ public interface Transaction {
 	 *
 	 * @return The current local status.
 	 */
-	TransactionStatus getStatus();
+	JcrTransactionStatus getStatus();
 
 	/**
 	 * Register a user synchronization callback for this transaction.

@@ -20,13 +20,13 @@ package org.jcrom.engine.spi;
 import org.jcrom.AnnotationReader;
 import org.jcrom.JcrSession;
 import org.jcrom.JcrSessionFactory;
-import org.jcrom.Transaction;
+import org.jcrom.JcrTransaction;
 import org.jcrom.mapping.MapperImplementor;
 import org.jcrom.type.TypeHandler;
 
 public interface JcrSessionImplementor extends JcrSession {
 	//===== SharedSessionContractImplementor =====
-	SessionEventListenerManager getEventListenerManager();
+	JcrSessionEventListenerManager getEventListenerManager();
 	
 	/**
 	 * Obtain the identifier associated with this session.
@@ -50,9 +50,7 @@ public interface JcrSessionImplementor extends JcrSession {
 	 *
 	 * @return {@code true} if the session is closed or if it's waiting for auto-close; {@code false} otherwise.
 	 */
-	default boolean isOpenOrWaitingForAutoClose() {
-		return !isClosed();
-	}
+	boolean isOpenOrWaitingForAutoClose();
 	
 	/**
 	 * Performs a check whether the Session is open, and if not:<ul>
@@ -60,9 +58,7 @@ public interface JcrSessionImplementor extends JcrSession {
 	 *     <li>throws an IllegalStateException (JPA defines the exception type)</li>
 	 * </ul>
 	 */
-	default void checkOpen() {
-		checkOpen(true);
-	}
+	void checkOpen();
 	
 	/**
 	 * Performs a check whether the Session is open, and if not:<ul>
@@ -99,7 +95,7 @@ public interface JcrSessionImplementor extends JcrSession {
 	 *
 	 * @return the transaction
      */
-	Transaction accessTransaction();
+	JcrTransaction accessTransaction();
 	
 	//===== SessionImplementor =====
 	@Override

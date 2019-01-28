@@ -57,7 +57,7 @@ public interface JcrSession extends Serializable, AutoCloseable, Closeable {
 	boolean isConnected();
 
 	/**
-	 * Begin a unit of work and return the associated {@link Transaction} object.  If a new underlying transaction is
+	 * Begin a unit of work and return the associated {@link JcrTransaction} object.  If a new underlying transaction is
 	 * required, begin the transaction.  Otherwise continue the new work in the context of the existing underlying
 	 * transaction.
 	 *
@@ -65,15 +65,15 @@ public interface JcrSession extends Serializable, AutoCloseable, Closeable {
 	 *
 	 * @see #getTransaction
 	 */
-	Transaction beginTransaction();
+	JcrTransaction beginTransaction();
 
 	/**
-	 * Get the {@link Transaction} instance associated with this session.  The concrete type of the returned
-	 * {@link Transaction} object is determined by the {@code hibernate.transaction_factory} property.
+	 * Get the {@link JcrTransaction} instance associated with this session.  The concrete type of the returned
+	 * {@link JcrTransaction} object is determined by the {@code hibernate.transaction_factory} property.
 	 *
 	 * @return a Transaction instance
 	 */
-	Transaction getTransaction();
+	JcrTransaction getTransaction();
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//~~~~~~~~~~ Session 
@@ -90,7 +90,7 @@ public interface JcrSession extends Serializable, AutoCloseable, Closeable {
 	 * Force this session to flush. Must be called at the end of a
 	 * unit of work, before committing the transaction and closing the
 	 * session (depending on {@link #setFlushMode(FlushMode)},
-	 * {@link Transaction#commit()} calls this method).
+	 * {@link JcrTransaction#commit()} calls this method).
 	 * <p/>
 	 * <i>Flushing</i> is the process of synchronizing the underlying persistent
 	 * store with persistable state held in memory.
@@ -175,7 +175,7 @@ public interface JcrSession extends Serializable, AutoCloseable, Closeable {
 	 *
 	 * @param listeners The listener(s) to add
 	 */
-	void addEventListeners(SessionEventListener... listeners);
+	void addEventListeners(JcrSessionEventListener... listeners);
 	
 	/**
 	 * Return the identifier value of the given entity as associated with this

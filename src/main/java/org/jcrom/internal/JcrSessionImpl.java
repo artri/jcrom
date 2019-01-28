@@ -35,9 +35,10 @@ import org.jcrom.FlushMode;
 import org.jcrom.JcrMappingException;
 import org.jcrom.JcrRuntimeException;
 import org.jcrom.JcrSession;
-import org.jcrom.SessionEventListener;
+import org.jcrom.JcrSessionEventListener;
 import org.jcrom.JcrSessionFactory;
-import org.jcrom.Transaction;
+import org.jcrom.JcrTransaction;
+import org.jcrom.JcrTransactionException;
 import org.jcrom.annotations.JcrNode;
 import org.jcrom.callback.JcromCallback;
 import org.jcrom.engine.spi.JcrSessionFactoryImplementor;
@@ -67,7 +68,7 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	private String uuid;
 	private FlushMode flushMode;
 	
-	private Transaction currentJcrTransaction;
+	private JcrTransaction currentJcrTransaction;
 	private boolean waitingForAutoClose;
 	private boolean closed;
 	
@@ -76,6 +77,7 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	private transient boolean disallowOutOfTransactionUpdateOperations;
 	private transient boolean discardOnClose;
 	
+	private transient JcrSessionEventListenerManagerImpl sessionEventListenerManager;
 	
 	private javax.jcr.Session rawSession;
 	
@@ -84,9 +86,10 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 		this.flushMode = FlushMode.AUTO;
 		this.autoClear = options.shouldAutoClear();
 		this.autoClose = options.shouldAutoClose();
-		this.disallowOutOfTransactionUpdateOperations = !sessionFactory.getSessionFactoryOptions().isAllowOutOfTransactionUpdateOperations();
-		this.discardOnClose = sessionFactory.getSessionFactoryOptions().isReleaseResourcesOnCloseEnabled();
+		this.disallowOutOfTransactionUpdateOperations = !sessionFactory.getOptions().isAllowOutOfTransactionUpdateOperations();
+		this.discardOnClose = sessionFactory.getOptions().isReleaseResourcesOnCloseEnabled();
 		
+		this.sessionEventListenerManager = new JcrSessionEventListenerManagerImpl();
 		// getTransactionCoordinator().pulse();
 	}
 
@@ -127,6 +130,15 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 			throw e;
 		}
 	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.JcrSession#isConnected()
+	 */
+	@Override
+	public boolean isConnected() {
+		throw new UnsupportedOperationException("Not implemented yet");
+	}
 
 	protected void checkSessionFactoryOpen() {
 		if (!getSessionFactory().isOpened()) {
@@ -149,10 +161,10 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	 * @see org.jcrom.JcrSession#beginTransaction()
 	 */	
 	@Override
-	public Transaction beginTransaction() {
+	public JcrTransaction beginTransaction() {
 		checkOpen();
 		
-		Transaction transaction = getTransaction();
+		JcrTransaction transaction = getTransaction();
 		transaction.begin();
 		return transaction;
 	}
@@ -162,7 +174,7 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	 * @see org.jcrom.JcrSession#getTransaction()
 	 */	
 	@Override
-	public Transaction getTransaction() {
+	public JcrTransaction getTransaction() {
 		return accessTransaction();
 	}
 	
@@ -211,10 +223,10 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 		checkOpen();
 		LOGGER.debug("Checking session dirtiness");
 		if (actionQueue.areInsertionsOrDeletionsQueued() ) {
-			log.debug( "Session dirty (scheduled updates and insertions)" );
+			LOGGER.debug( "Session dirty (scheduled updates and insertions)" );
 			return true;
 		}
-		DirtyCheckEvent event = new DirtyCheckEvent( this );
+		DirtyCheckEvent event = new DirtyCheckEvent(this);
 		for (DirtyCheckEventListener listener : listeners(EventType.DIRTY_CHECK)) {
 			listener.onDirtyCheck(event);
 		}
@@ -236,9 +248,17 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	 * @see org.jcrom.JcrSession#addEventListeners()
 	 */		
 	@Override
-	public void addEventListeners(SessionEventListener... listeners) {
-		getEventListenerManager().addListener( listeners );
+	public void addEventListeners(JcrSessionEventListener... listeners) {
+		getEventListenerManager().addListener(listeners);
 	}	
+	
+	private <T> Iterable<T> listeners(EventType<T> type) {
+		return eventListenerGroup(type).listeners();
+	}
+
+	private <T> EventListenerGroup<T> eventListenerGroup(EventType<T> type) {
+		return getFactory().getServiceRegistry().getService( EventListenerRegistry.class ).getEventListenerGroup(type);
+	}
 	
 	// not for internal use:
 	@Override
@@ -276,6 +296,11 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 		LOGGER.warn("persistenceContext.setReadOnly not implemented yet");
 	}
 
+	@Override
+	public JcrSessionEventListenerManagerImpl getEventListenerManager() {
+		return sessionEventListenerManager;
+	}
+	
 	/**
 	 * @return the uuid
 	 */
@@ -292,6 +317,15 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 		return !isClosed() || waitingForAutoClose;
 	}
 	
+	/**
+	 * (non-Javadoc)
+	 * @see org.jcrom.engine.spi.JcrSessionImplementor#checkOpen()
+	 */
+	@Override
+	public void checkOpen()  {
+		checkOpen(true);
+	}
+
 	@Override
 	public void checkOpen(boolean markForRollbackIfClosed) {
 		if (isClosed()) {
@@ -344,9 +378,9 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	}
 	
 	@Override
-	public Transaction accessTransaction() {	
+	public JcrTransaction accessTransaction() {	
 		if (null == this.currentJcrTransaction) {
-			this.currentJcrTransaction = new TransactionImpl(this);
+			this.currentJcrTransaction = new JcrTransactionImpl(this);
 		}
 		
 		if (!isClosed() || (waitingForAutoClose && getSessionFactory().isOpened())) {
@@ -356,7 +390,7 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 		return this.currentJcrTransaction;
 	}
 
-	protected Transaction getCurrentTransaction() {
+	protected JcrTransaction getCurrentTransaction() {
 		return this.currentJcrTransaction;
 	}
 	
@@ -387,7 +421,7 @@ public class JcrSessionImpl implements JcrSessionImplementor {
 	
 	private void checkTransactionNeeded() {
 		if (disallowOutOfTransactionUpdateOperations && !isTransactionInProgress() ) {
-			throw new TransactionRequiredException( "no transaction is in progress" );
+			throw new JcrTransactionException("no transaction is in progress");
 		}
 	}
 	

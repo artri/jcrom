@@ -19,7 +19,7 @@ package org.jcrom;
 
 import java.io.Serializable;
 
-public interface SessionEventListener extends Serializable {
+public interface JcrSessionEventListener extends Serializable {
 	public void transactionCompletion(boolean successful);
 	
 	public void jcrConnectionAcquisitionStart();

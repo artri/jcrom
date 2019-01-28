@@ -32,8 +32,8 @@ import java.util.Map;
 import org.jcrom.JcrRuntimeException;
 import org.jcrom.JcrSession;
 import org.jcrom.JcrSessionFactory;
-import org.jcrom.Transaction;
-import org.jcrom.TransactionStatus;
+import org.jcrom.JcrTransaction;
+import org.jcrom.JcrTransactionStatus;
 import org.jcrom.engine.spi.JcrSessionFactoryImplementor;
 import org.jcrom.engine.spi.JcrSessionImplementor;
 import org.slf4j.Logger;
@@ -194,8 +194,8 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 		
 		LOGGER.debug("Terminatinng orphaned session");
 		try {
-			final Transaction orphanTransaction = orphan.getTransaction();
-			if (orphanTransaction != null && orphanTransaction.getStatus() == TransactionStatus.ACTIVE ) {
+			final JcrTransaction orphanTransaction = orphan.getTransaction();
+			if (orphanTransaction != null && orphanTransaction.getStatus() == JcrTransactionStatus.ACTIVE ) {
 				try {
 					orphanTransaction.rollback();
 				}
@@ -280,7 +280,7 @@ public class ThreadLocalSessionContext implements CurrentSessionContext {
 					//   but we capture that there simply to doAfterTransactionCompletion the unbind...
 					LOGGER.trace("Allowing invocation [{}] to proceed to real (closed) session", methodName);
 				}
-				else if (realSession.getTransaction().getStatus() != TransactionStatus.ACTIVE) {
+				else if (realSession.getTransaction().getStatus() != JcrTransactionStatus.ACTIVE) {
 					// limit the methods available if no transaction is active
 					if ("beginTransaction".equals(methodName)
 							|| "getTransaction".equals(methodName)

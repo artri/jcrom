@@ -18,10 +18,10 @@
 package org.jcrom;
 
 /**
- * Enumeration of statuses in which a transaction facade ({@link org.jcrom.Transaction}) might be.
+ * Enumeration of statuses in which a transaction facade ({@link org.jcrom.JcrTransaction}) might be.
  *
  */
-public enum TransactionStatus {
+public enum JcrTransactionStatus {
 	/**
 	 * The transaction has not yet been started.
 	 */
@@ -62,8 +62,8 @@ public enum TransactionStatus {
 	 */
 	ROLLING_BACK;
 
-	public boolean isOneOf(TransactionStatus... statuses) {
-		for ( TransactionStatus status : statuses ) {
+	public boolean isOneOf(JcrTransactionStatus... statuses) {
+		for ( JcrTransactionStatus status : statuses ) {
 			if ( this == status ) {
 				return true;
 			}
@@ -71,15 +71,15 @@ public enum TransactionStatus {
 		return false;
 	}
 
-	public boolean isNotOneOf(TransactionStatus... statuses) {
+	public boolean isNotOneOf(JcrTransactionStatus... statuses) {
 		return !isOneOf( statuses );
 	}
 
 	public boolean canRollback() {
 		return isOneOf(
-				TransactionStatus.ACTIVE,
-				TransactionStatus.FAILED_COMMIT,
-				TransactionStatus.MARKED_ROLLBACK
+				JcrTransactionStatus.ACTIVE,
+				JcrTransactionStatus.FAILED_COMMIT,
+				JcrTransactionStatus.MARKED_ROLLBACK
 		);
 	}
 }

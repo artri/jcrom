@@ -56,7 +56,7 @@ public interface SessionBuilder {
 	 *
 	 * @return {@code this}, for method chaining
 	 */
-	SessionBuilder eventListeners(SessionEventListener... listeners);
+	SessionBuilder eventListeners(JcrSessionEventListener... listeners);
 	
 	/**
 	 * Remove all listeners intended for the built Session currently held here, including any auto-apply ones; in other

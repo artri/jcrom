@@ -3,13 +3,13 @@ package org.jcrom.cfg;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jcrom.SessionEventListener;
+import org.jcrom.JcrSessionEventListener;
 
 public class BaselineSessionEventsListenerBuilder {
 	private boolean logSessionMetrics;
 	
-	public List<SessionEventListener> buildBaselineList() {
-		List<SessionEventListener> list = new ArrayList<SessionEventListener>();
+	public List<JcrSessionEventListener> buildBaselineList() {
+		List<JcrSessionEventListener> list = new ArrayList<JcrSessionEventListener>();
 		if (logSessionMetrics && StatisticalLoggingSessionEventListener.isLoggingEnabled()) {
 			list.add(new StatisticalLoggingSessionEventListener());
 		}

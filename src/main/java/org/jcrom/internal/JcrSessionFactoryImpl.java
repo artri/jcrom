@@ -42,7 +42,7 @@ import org.jcrom.JcrRuntimeException;
 import org.jcrom.ReflectionAnnotationReader;
 import org.jcrom.JcrSession;
 import org.jcrom.SessionBuilder;
-import org.jcrom.SessionEventListener;
+import org.jcrom.JcrSessionEventListener;
 import org.jcrom.JcrSessionFactory;
 import org.jcrom.Validator;
 import org.jcrom.engine.spi.SessionBuilderImplementor;
@@ -483,7 +483,7 @@ public class JcrSessionFactoryImpl implements JcrSessionFactoryImplementor {
 		private boolean autoClear;
 		
 		@Deprecated
-		private List<SessionEventListener> listeners;
+		private List<JcrSessionEventListener> listeners;
 		private List<EventListenerDefinition> eventListeners;
 		
 		public SessionBuilderImpl(JcrSessionFactoryImpl sessionFactory) {
@@ -530,7 +530,7 @@ public class JcrSessionFactoryImpl implements JcrSessionFactoryImplementor {
 			LOGGER.trace("Opening JCR Session.");
 			final JcrSessionImpl session = new JcrSessionImpl(sessionFactory, this);
 
-			for (SessionEventListener listener : listeners) {
+			for (JcrSessionEventListener listener : listeners) {
 				LOGGER.warn("Adding listener to a session: skipped");
 				//TODO: needs to be implemented
 //				session.getEventListenerManager().addListener(listener);
@@ -613,7 +613,7 @@ public class JcrSessionFactoryImpl implements JcrSessionFactoryImplementor {
 		 * @see org.jcrom.SessionBuilder#eventListeners(org.jcrom.SessionEventListener[])
 		 */
 		@Override
-		public SessionBuilder eventListeners(SessionEventListener... listeners) {
+		public SessionBuilder eventListeners(JcrSessionEventListener... listeners) {
 			Collections.addAll(this.listeners, listeners);
 			return this;
 		}
