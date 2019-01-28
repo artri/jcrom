@@ -49,6 +49,7 @@ import org.jcrom.engine.spi.SessionBuilderImplementor;
 import org.jcrom.engine.spi.JcrSessionFactoryImplementor;
 import org.jcrom.engine.spi.SessionFactoryOptions;
 import org.jcrom.mapping.Mapper;
+import org.jcrom.mapping.MapperImpl;
 import org.jcrom.type.DefaultTypeHandler;
 import org.jcrom.type.JavaFXTypeHandler;
 import org.jcrom.type.TypeHandler;
@@ -114,7 +115,7 @@ public class JcrSessionFactoryImpl implements JcrSessionFactoryImplementor {
         this.currentSessionContext = buildCurrentSessionContext();
         
         this.typeHandler = getDefaultTypeHandler();
-        this.mapper = new Mapper(this);
+        this.mapper = new MapperImpl(this);
         this.validator = new Validator(this);
         this.annotationReader = new ReflectionAnnotationReader();
     }
